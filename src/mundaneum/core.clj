@@ -140,3 +140,35 @@
 ;;   {:eyeColorLabel "dark brown", :count "94"}
 ;;   {:eyeColorLabel "amber", :count "13"} {:eyeColorLabel "grey", :count "11"}}
 
+;; airports within 20km of Paris
+(query
+ '[:find ?place ?placeLabel ?location
+   :where [[(entity "Paris") (prop :coordinate-location) ?parisLoc]
+           [?place (prop :instance-of) / (prop :subclass-of) * (entity "airport")]
+           :service wikibase:around [[?place (prop :coordinate-location) ?location]
+                                     [bd:serviceParam wikibase:center ?parisLoc]
+                                     [bd:serviceParam wikibase:radius "20"]]]])
+;; #{{:place "Q2875445",
+;;    :location "Point(2.60611 48.8967)",
+;;    :placeLabel "Chelles Le Pin Airport"}
+;;   {:place "Q738719",
+;;    :location "Point(2.441388888 48.969444444)",
+;;    :placeLabel "Paris–Le Bourget Airport"}
+;;   {:place "Q7103340",
+;;    :location "Point(2.362778 48.723333)",
+;;    :placeLabel "Orly Air Base"}
+;;   {:place "Q223416",
+;;    :location "Point(2.362778 48.723333)",
+;;    :placeLabel "Orly Airport"}
+;;   {:place "Q1894366",
+;;    :location "Point(2.191667 48.774167)",
+;;    :placeLabel "Villacoublay Air Base"}
+;;   {:place "Q1894366",
+;;    :location "Point(2.19972222 48.77305556)",
+;;    :placeLabel "Villacoublay Air Base"}
+;;   {:place "Q22975841",
+;;    :location "Point(2.4405591 48.9511837)",
+;;    :placeLabel "Q22975841"}
+;;   {:place "Q2875445",
+;;    :location "Point(2.6075 48.897778)",
+;;    :placeLabel "Chelles Le Pin Airport"}}

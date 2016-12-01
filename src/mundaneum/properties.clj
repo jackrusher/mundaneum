@@ -11,6 +11,7 @@
 
 (def properties
   '{:author ["P50"]
+    :coordinate-location ["P625"]
     :religion
     ["P140"
      "Item"

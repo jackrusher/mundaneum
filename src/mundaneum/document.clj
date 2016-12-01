@@ -38,3 +38,6 @@
 
 (defn get-label [document]
   (.getText (.getValue (first (.getLabels document)))))
+
+(defn id->label [id]
+  (get-label (get-entity-document id)))

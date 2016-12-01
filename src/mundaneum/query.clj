@@ -78,20 +78,26 @@
   (loop [q q out ""]
     (if-let [token (first q)]
       (recur (case token
-               :where  (drop 2 q)
-               :filter (drop 2 q)
+               :where   (drop 2 q)
+               :filter  (drop 2 q)
+               :service (drop 3 q)
                (rest q))
              (str out
                   (cond
                     (= :find token) "SELECT "
                     (= :filter token) (str " FILTER ("
-                                         (stringify-query (first (rest q)))
-                                         ")\n")
+                                           (stringify-query (first (rest q)))
+                                           ")\n")
                     (= :where token) (str "\nWHERE {\n"
                                           (stringify-query (first (rest q)))
                                           ;; always bring in the label service
                                           " SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\" . }\n"
                                           "}")
+                    (= :service token) (str "\nSERVICE "
+                                            (first (rest q))
+                                            " {\n"
+                                            (stringify-query (second (rest q)))
+                                            "}")
                     (= :order-by token) "\nORDER BY "
                     (= :group-by token) "\nGROUP BY "
                     (= :limit token) "\nLIMIT "
