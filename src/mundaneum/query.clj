@@ -110,29 +110,33 @@
 (defn prop
   "Helper function to look up one of the pre-spidered properties by keyword `p`."
   [p]
-  (str " wdt:" (first (get mundaneum.properties/properties p))))
+  (str " wdt:" (get mundaneum.properties/properties p)))
+
+(defn query-for-entity [label criteria]
+  (->> (query (template
+               [:find ?item
+                :where [[?item rdfs:label ~label@en]
+                        ~@(mapv (fn [[p e]]
+                                  (template
+                                   [?item
+                                    ~(symbol (prop p))
+                                    ~(symbol (entity e))]))
+                                (partition 2 criteria))]
+                :limit 10]))
+       (map :item)
+       (filter #(re-find #"^Q[0-9]*$" %))
+       first
+       (str " wd:")))
 
 (def entity
-  "This is a helper function that tries to guess the right WikiData entity ID from a string resembling that entity's `label`. This is harder than it sounds, and this will sometimes return the wrong version of 'human' or 'person' to do you any good in a query. There is endless room for improvement in the heuristic here employed."
+  "Returns a guess at the WikiData entity ID from a string resembling that entity's `label`. One can specity `criteria` in the form of :propery value pairs that will be used to narrow in on the right entity."
   (memoize   
    (fn [label & criteria]
-     (->> (query (template
-                  [:find ?item
-                   :where [[?item rdfs:label ~label@en]
-                           ~@(mapv (fn [[p e]]
-                                     (template
-                                      [?item
-                                       ~(symbol (prop p))
-                                       ~(symbol (entity e))]))
-                                   (partition 2 criteria))]
-                   :limit 10]))
-          (map :item)
-          (filter #(re-find #"^Q[0-9]*$" %))
-          first
-          (str " wd:")))))
+     (if (empty? criteria)
+       ;; no criteria and an exact title match? go with it.
+       (if-let [doc (entity-document-by-title label)] 
+         (str " wd:" (get-document-id doc))
+         (query-for-entity label criteria))
+       (query-for-entity label criteria)))))
 
-     ;; ;; exact title match? go with it.
-     ;; (if-let [doc (entity-document-by-title label)] 
-     ;;   (str " wd:" (get-document-id doc))
-     ;;   ;; no match? find things with that label, filter to entities, take the first 😹
-     ;;   )
+     

@@ -19,6 +19,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUERY 
+(entity "James Joyce")
 
 ;; what are some works authored by James Joyce?
 (query '[:find ?work ?workLabel
@@ -103,13 +104,12 @@
 ;; the second part of the :where clause to specify only female
 ;; inventor/discovers (you'll need to increase the limit, as there
 ;; appear to be many highly productive lady astrophysicists
-(->>
- (query
-  '[:find ?whoLabel ?thingLabel
-    :where [[?thing (prop :discoverer-or-inventor) ?who]
-            ;[?who (prop :sex-or-gender) (entity "female")]
-            ]
-    :limit 100])
+(->> (query
+      '[:find ?whoLabel ?thingLabel
+        :where [[?thing (prop :discoverer-or-inventor) ?who]
+                ;;[?who (prop :sex-or-gender) (entity "female")]
+                ]
+        :limit 100])
  (group-by :whoLabel)
  (reduce #(assoc %1 (first %2) (mapv :thingLabel (second %2))) {}))
 ;;=>

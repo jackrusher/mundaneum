@@ -1,773 +1,2148 @@
 (ns mundaneum.properties)
 
-;; Some pre-spidered properties to make it easier to create queries. I
-;; should write some code to keep this list up-to-date, as there are
-;; only ~3000 of them in total.
-
+;; from http://quarry.wmflabs.org/run/45013/output/1/json
+;;
 ;; (reduce
-;;  #(assoc %1 (keyword (cs/replace (first %2) #"[ /]" "-")) (rest %2))
+;;  #(assoc %1 (keyword (clojure.string/replace (clojure.string/replace (second %2) #"[ /]" "-") #"[\(\)\']" "")) (first %2))
 ;;  {}
-;; )
+;;  ((clojure.edn/read-string
+;;    (clojure.string/replace
+;;     (slurp "wikidata-properties.json")
+;;     ":" " ")) "rows"))
 
 (def properties
-  '{:author ["P50"]
-    :coordinate-location ["P625"]
-    :religion
-    ["P140"
-     "Item"
-     "religion: religion of a person, organization or religious building. Note that a church is not a religion!"
-     "Elizabeth II <religion> Church of England"
-     "-"],
-    :canonization-status
-    ["P411"
-     "Item"
-     "canonization status: stage in the process of attaining sainthood per the subject's religious organization"
-     "John Paul II <canonization status> beatification"
-     "-"],
-    :member-of-political-party
-    ["P102"
-     "Item"
-     "political party: the political party of which this politician is or has been a member"
-     "Angela Merkel <member of political party> Christian Democratic Union"
-     "-"],
-    :academic-degree
-    ["P512"
-     "Item"
-     "academic degree and no label: academic degree that the person holds"
-     "Paul Krugman <academic degree> Doctor of Philosophy"
-     "-"],
-    :noble-family
-    ["P53"
-     "Item"
-     "noble family: include dynasty and nobility houses"
-     "Genghis Khan <noble family> Borjigin"
-     "-"],
-    :employer
-    ["P108"
-     "Item"
-     "employer: organization for which the subject works or worked"
-     "Enrico Fermi <employer> University of Chicago"
-     "-"],
-    :ancestral-home
-    ["P66"
-     "Item"
-     "ancestral home: place of origin for ancestors of subject"
-     "Hu Shih <ancestral home> Jixi County"
-     "-"],
-    :notable-work
-    ["P800"
-     "Item"
-     "work and magnum opus: subject's notable scientific work or work of art, literature, or significance"
-     "Émile Zola <notable work> Germinal"
-     "-"],
-    :position-held
-    ["P39"
-     "Item"
-     "mandate: subject currently or formerly holds the object position or public office"
-     "Angela Merkel <position held> Chancellor of Germany"
-     "-"],
-    :voice-type
-    ["P412"
-     "Item"
-     "voice type: person's voice type. expected values: soprano, mezzo-soprano, contralto, countertenor, tenor, baritone, bass [and derivatives]"
-     "Cesare Valletti <voice type> tenor"
-     "-"],
-    :birth-name
-    ["P1477"
-     "Monolingual text"
-     "name at birth: full name of a person at birth, if different from their current, generally used name [samples: John Peter Doe for Joe Doe, Ann Smith for Ann Miller]"
-     "John Paul II <birth name> Karol Józef Wojtyła [Polish]"
-     "-"],
-    :instrument
-    ["P1303"
-     "Item"
-     "musical instrument: instrument that a person plays"
-     "Ringo Starr <instrument> drum"
-     "-"],
-    :audio-recording-of-the-subjects-spoken-voice
-    ["P990"
-     "Commons media file"
-     "audio file representing the speaking voice of a person; or of an animated cartoon or other fictitious character"
-     "Mary Robinson <audio recording of the subject's spoken voice> Mary Robinson - Desert Island Discs - 28 July 2013.flac"
-     "-"],
-    :name-in-native-language
-    ["P1559"
-     "Monolingual text"
-     "name: name of a person in their native language"
-     "Amakusa Shirō <name in native language> 天草 四郎 [Japanese]"
-     "-"],
-    :date-of-death
-    ["P570"
-     "Point in time"
-     "date of death: date on which the subject died"
-     "Jean-François Champollion <date of death> 1832-03-04"
-     "-"],
-    :image-of-grave
-    ["P1442"
-     "Commons media file"
-     "picture of a person or animal's grave, gravestone or tomb"
-     "Lucas Cranach the Elder <image of grave> Cranach der Ältere Grab.jpg"
-     "-"],
-    :languages-spoken-written-or-signed
-    ["P1412"
-     "Item"
-     "language proficiency: language[s] that a person speaks or writes. Can include native languages"
-     "Margrethe II of Denmark <languages spoken, written or signed> Danish, English, French, Swedish, German and Faroese"
-     "-"],
-    :native-language
-    ["P103"
-     "Item"
-     "first language: language or languages a person has learned from birth"
-     "Usievalad Ihnatouski <native language> Belarusian"
-     "-"],
-    :affiliation
-    ["P1416"
-     "Item"
-     "organization that a person is affiliated with"
-     "Raoul Bott <affiliation> Institute for Advanced Study"
-     "-"],
-    :occupation
-    ["P106"
-     "Item"
-     "profession: occupation of a person; see also 'field of work' [Property:P101], 'position held' [Property:P39]"
-     "Abraham Klein <occupation> physicist"
-     "-"],
-    :official-residence
-    ["P263"
-     "Item"
-     "official residence: the residence at which heads of government and other senior figures officially reside"
-     "Prime Minister of Canada <official residence> 24 Sussex Drive"
-     "-"],
-    :signature
-    ["P109"
-     "Commons media file"
-     "signature: image of a person's signature"
-     "Leo Tolstoy <signature> Leo Tolstoy signature.svg"
-     "-"],
-    :Commons-Creator-page
-    ["P1472"
-     "String"
-     "name of the person's creator page on Wikimedia Commons [without the prefix 'Creator']"
-     "Augustus Henry Fox <Commons Creator page> Henry Fox Augustus Henry Fox"
-     "-"],
-    :birthday
-    ["P3150"
-     "Item"
-     "birthday: item for day and month on which the subject was born. Used when full 'date of birth' [P569] isn't known."
-     "Haruka Shimotsuki <birthday> November 15"
-     "-"],
-    :doctoral-student
-    ["P185"
-     "Item"
-     "doctoral student[s] of a professor"
-     "Enrico Fermi <doctoral student> Tsung-Dao Lee"
-     "doctoral advisor"],
-    :sexual-orientation
-    ["P91"
-     "Item"
-     "sexual orientation: the sexual orientation of the person - use IF AND ONLY IF they have stated it themselves, unambiguously, or it has been widely agreed upon by historians after their death"
-     "Alan Turing <sexual orientation> homosexuality"
-     "-"],
-    :honorific-prefix
-    ["P511"
-     "Item"
-     "honorific and title of honor: word or expression used before a name, in addressing or referring to a person"
-     "Douglas Haig, 1st Earl Haig <honorific prefix> The Right Honourable"
-     "-"],
-    :Project-Gutenberg-author-ID
-    ["P1938"
-     "External identifier"
-     "Project Gutenberg: author identifier at Project Gutenberg"
-     "David Christie Murray <Project Gutenberg author ID> 25179"
-     "-"],
-    :educated-at
-    ["P69"
-     "Item"
-     "Alma mater: educational institution attended by the subject"
-     "Abraham Klein <educated at> Harvard University"
-     "-"],
-    :award-received
-    ["P166"
-     "Item"
-     "award: award or recognition received by a person, organisation or creative work"
-     "Liu Xiaobo <award received> 2010 Nobel Peace Prize"
-     "-"],
-    :given-name
-    ["P735"
-     "Item"
-     "given name: first name or another given name of this person. Values used with the property shouldn't link disambiguations nor family names."
-     "George Washington <given name> George"
-     "-"],
-    :date-of-birth
-    ["P569"
-     "Point in time"
-     "date of birth: date on which the subject was born"
-     "Jean-François Champollion <date of birth> 1790-12-23"
-     "-"],
-    :killed-by
-    ["P157"
-     "Item"
-     "murderer: person who killed the subject"
-     "John F. Kennedy <killed by> Lee Harvey Oswald"
-     "-"],
-    :cause-of-death
-    ["P509"
-     "Item"
-     "cause of death: underlying or immediate cause of death. Underlying cause [e.g. car accident, stomach cancer] preferred. Use 'manner of death' [P1196] for broadest category, e.g. natural causes, accident, homicide, suicide"
-     "Theodore Roosevelt <cause of death> coronary thrombosis"
-     "-"],
-    :shooting-handedness
-    ["P423"
-     "Item"
-     "whether the hockey player passes oŗ shoots left- or right-handed"
-     "Joe Thornton <shooting handedness> left-handed shot"
-     "-"],
-    :field-of-work
-    ["P101"
-     "Item"
-     "field of work: specialization of a person or organization, see P106 for the occupation"
-     "Abraham Klein <field of work> quantum field theory"
-     "-"],
-    :coat-of-arms-image
-    ["P94"
-     "Commons media file"
-     "coat of arms: image of the item's coat of arms"
-     "Phillipe de Plessis <coat of arms image> Armoiries Philippe du Plaissis.svg"
-     "-"],
-    :Eight-Banner-register
-    ["P470"
-     "Item"
-     "Manchu household register for people of the Qing Dynasty"
-     "Oboi <Eight Banner register> Manchu Bordered Yellow Banner"
-     "-"],
-    :coat-of-arms
-    ["P237"
-     "Item"
-     "coat of arms: subject's coat of arms"
-     "George Washington <coat of arms> Coat of arms of George Washington"
-     "-"],
-    :convicted-of
-    ["P1399"
-     "Item"
-     "crime a person was convicted of"
-     "Mark Hofmann <convicted of> murder, forgery and fraud"
-     "-"],
-    :ethnic-group
-    ["P172"
-     "Item"
-     "ethnic group: subject's ethnicity [consensus is that a VERY high standard of proof is needed for this field to be used. In general this means 1] the subject claims it him/herself, or 2] it is widely agreed on by scholars, or 3] is fictional and portrayed as such]."
-     "Hosni Mubarak <ethnic group> Arab"
-     "-"],
-    :has-pet
-    ["P1429"
-     "Item"
-     "pet: pet that a person owns"
-     "Barack Obama <has pet> Bo"
-     "-"],
-    :feast-day
-    ["P841"
-     "Item"
-     "saint's principal feast day"
-     "Saint Patrick <feast day> March 17"
-     "-"],
-    :astronaut-mission
-    ["P450"
-     "Item"
-     "spaceflight: space mission that the subject is or has been a member of [do not include future missions]"
-     "Marcos Pontes <astronaut mission> Soyuz TMA-8"
-     "crew member"],
-    :sex-or-gender
-    ["P21"
-     "Item"
-     "sex and gender: sexual identity of subject: male [Q6581097], female [Q6581072], intersex [Q1097630], transgender female [Q1052281], transgender male [Q2449503]. Animals: male animal [Q44148], female animal [Q43445]. Groups of same gender use 'subclass of' [P279]"
-     "Confucius <sex or gender> male"
-     "-"],
-    :honorific-suffix
-    ["P1035"
-     "Item"
-     "honorific: word or expression with connotations conveying esteem or respect when used, after a name, in addressing or referring to a person"
-     "→ Property talk:P1035"
-     "-"],
-    :student-of
-    ["P1066"
-     "Item"
-     "teacher: person who has taught this person"
-     "Alexander the Great <student of> Aristotle"
-     "student"],
-    :pseudonym
-    ["P742"
-     "String"
-     "pseudonym: alias used by someone or by which this person is universally known"
-     "Mark Twain <pseudonym> Mark Twain"
-     "-"],
-    :manner-of-death
-    ["P1196"
-     "Item"
-     "manner of death: circumstances of a person's death; one of: natural causes, accident, suicide, homicide, pending investigation or special 'unknown value'. Use 'cause of death' [P509] for more immediate or underlying causes and events, e.g. heart attack, car accident"
-     "Paul Walker <manner of death> accident"
-     "-"],
-    :dan-kyu-rank
-    ["P468"
-     "Item"
-     "rank system used in several board games [e.g. go, shogi, renju], martial arts [e.g. judo, kendo, wushu] and some other games"
-     "Go Seigen <dan/kyu rank> 9 dan"
-     "-"],
-    :place-of-death
-    ["P20"
-     "Item"
-     "place of death: the most specific known [e.g. city instead of country, or hospital instead of city]"
-     "John F. Kennedy <place of death> Dallas"
-     "-"],
-    :country-of-citizenship
-    ["P27"
-     "Item"
-     "citizenship: the object is a country that recognizes the subject as its citizen"
-     "Nelson Mandela <country of citizenship> South Africa"
-     "-"],
-    :website-account-on
-    ["P553"
-     "Item"
-     "user account: a website that the person or organization has an account on [use with P554] Note: only used with reliable source or if the person or organization disclosed it."
-     "Sascha Lobo <website account on> Quora"
-     "-"],
-    :eye-color
-    ["P1340"
-     "Item"
-     "eye color: color of the irises of a person's eyes"
-     "Linda Evangelista <eye color> blue-green"
-     "-"],
-    :manager-director
-    ["P1037"
-     "Item"
-     "person who manages any kind of group"
-     "Louvre <manager/director> Jean-Luc Martinez"
-     "organisation directed from the office"],
-    :place-of-birth
-    ["P19"
-     "Item"
-     "place of birth: most specific known [e.g. city instead of country, or hospital instead of city]"
-     "Marie Curie <place of birth> Warsaw"
-     "-"],
-    :place-of-burial
-    ["P119"
-     "Item"
-     "burial and grave: location of grave, resting place, place of ash-scattering, etc, [e.g. town/city or cemetery] for a person or animal. There may be several places: e.g. re-burials, cenotaphs, parts of body buried separately."
-     "John F. Kennedy <place of burial> Arlington National Cemetery"
-     "-"],
-    :family-name
-    ["P734"
-     "Item"
-     "family name: surname or last name of a person"
-     "George Washington <family name> Washington"
-     "-"],
-    :student
-    ["P802"
-     "Item"
-     "student: notable student[s] of a person"
-     "Albert Einstein <student> Ernst G. Straus"
-     "student of"],
-    :doctoral-advisor
-    ["P184"
-     "Item"
-     "doctoral advisor: person who supervised the doctorate or PhD thesis of the subject"
-     "Enrico Fermi <doctoral advisor> Luigi Puccianti"
-     "doctoral student"],
-    :noble-title
-    ["P97"
-     "Item"
-     "royal or noble rank: titles held by the person"
-     "William Mansfield, 1st Baron Sandhurst <noble title> Baron Sandhurst"
-     "-"],
-    :handedness
-    ["P552" "Item" "handedness of the person" "→ Property talk:P552" "-"],
-    :member-of
-    ["P463"
-     "Item"
-     "member: part of a specific organization or club. Do not use for membership in ethnic or social groups, nor for holding a position such as a member of parliament [use P39 for that]."
-     "Isaac Newton <member of> Royal Society"
-     "-"],
-    :filmography
-    ["P1283"
-     "Item"
-     "filmography: list of films a person has contributed to"
-     "Bruce Lee <filmography> Bruce Lee filmography"
-     "-"],
-    :participant-of
-    ["P1344"
-     "Item"
-     "event a person or an organization was a participant in, inverse of P710 or P1923"
-     "Alberto Tomba <participant of> 1992 Winter Olympics"
-     "participant and participating teams"]
-    :followed-by
-    ["P156"
-     "Item"
-     "followed by: immediately following item in some series of which the subject is part. Use P1366 [replaced by] if the item is replaced, e.g. political offices, states"
-     "Rocky <followed by> Rocky II"
-     "follows"],
-    :name-in-kana
-    ["P1814"
-     "String"
-     "kana: the reading of a Japanese name in kana"
-     "Junichiro Koizumi <name in kana> こいずみ じゅんいちろう"
-     "-"],
-    :described-by-source
-    ["P1343"
-     "Item"
-     "dictionary, encyclopaedia, etc. where this item is described"
-     "New York City <described by source> 1911 Encyclopædia Britannica"
-     "-"],
-    :color
-    ["P462" "Item" "color: color of subject" "charcoal <color> black" "-"],
-    :instance-of
-    ["P31"
-     "Item"
-     "instance of: The subject is an instance of the object item. Use more specific properties when applicable, e.g. occupation [P106] instead of 'is a <writer>' [see Help:Basic membership properties for more information]"
-     "Laika <instance of> dog"
-     "-"],
-    :owned-by
-    ["P127"
-     "Item"
-     "proprietor: owner of the subject"
-     "Chelsea F.C. <owned by> Roman Abramovich"
-     "owner of"],
-    :use
-    ["P366"
-     "Item"
-     "use: main use of the subject [includes current and former usage]"
-     "Willis Tower <use> office building"
-     "-"],
-    :proved-by
-    ["P1318"
-     "Item"
-     "person who proved something"
-     "Poincaré conjecture <proved by> Grigori Perelman"
-     "-"],
-    :is-a-list-of
-    ["P360"
-     "Item"
-     "common element between all listed items"
-     "list of popes <is a list of> pope"
-     "has list"],
-    :time-of-discovery
-    ["P575"
-     "Point in time"
-     "discovery: date or point in time when the item was discovered"
-     "Uranus <time of discovery> March 13, 1781"
-     "-"],
-    :subclass-of
-    ["P279"
-     "Item"
-     "subclass: all of this class of items are instances of some more general class of items [see Help:Basic membership properties for more information]"
-     "tree <subclass of> plant"
-     "-"],
-    :follows
-    ["P155"
-     "Item"
-     "follows: immediately prior item in some series of which the subject is part. Use P1365 [replaces] if the preceding item was replaced, e.g. political offices, states and there is no identity between precedent and following geographic unit"
-     "1 <follows> 0"
-     "followed by"],
-    :part-of
-    ["P361"
-     "Item"
-     "part: this item is a part of that item [see Help:Basic membership properties for more information]"
-     "quark <part of> hadron"
-     "has as part"],
-    :named-after
-    ["P138"
-     "Item"
-     "eponym: entity or event that inspired the subject's name, or namesake [in at least one language]"
-     "Jules Verne <named after> Jules Verne"
-     "-"],
-    :different-from
-    ["P1889"
-     "Item"
-     "difference: item that is different from another item, but they are often confused"
-     "Philip A. Goodwin <different from> Philip R. Goodwin"
-     "-"],
-    :sourcing-circumstances
-    ["P1480"
-     "Item"
-     "information source: qualifiers for claims: circa, misprint, presumably"
-     "Muḥammad ibn Mūsā al-Khwārizmī <date of birth> 780 <sourcing circumstances> circa"
-     "-"],
-    :discoverer-or-inventor
-    ["P61"
-     "Item"
-     "inventor, innovator and discoverer: discovered, first described, or invented by"
-     "Enceladus <discoverer or inventor> William Herschel"
-     "-"],
-    :facet-of
-    ["P1269"
-     "Item"
-     "topic of which this item is an aspect, item that offers a broader perspective on the same topic"
-     "history of Madagascar <facet of> Madagascar"
-     "-"],
-    :patent-number
-    ["P1246"
-     "External identifier"
-     "patent: identifier for a patented invention"
-     "mouse <patent number> US3987685"
-     "-"],
-    :opposite-of
-    ["P461"
-     "Item"
-     "opposite and antonym: item that is the opposite of this item"
-     "black <opposite of> white"
-     "-"],
-    :quantity-symbol
-    ["P416"
-     "String"
-     "quantity symbol: symbol for a physical quantity"
-     "electric charge <quantity symbol> "],
-    :shape
-    ["P1419"
-     "Item"
-     "shape: geometric shape of an object"
-     "pyramid <shape> pyramid"
-     "-"],
-    :Unicode-character
-    ["P487"
-     "String"
-     "Unicode symbols: Unicode character representing the item"
-     "euro sign <Unicode character> €"
-     "-"],
-    :applies-to-part
-    ["P518"
-     "Item"
-     "part of the item for which the claim is valid"
-     "Belly Amphora by the Andokides Painter <creator> Andokides painter <applies to part> red-figure pottery"
-     "-"],
-    :archives-at
-    ["P485"
-     "Item"
-     "the institution holding the subject's archives"
-     "Johann Sebastian Bach <archives at> Bach-Archiv Leipzig"
-     "-"],
-    :sRGB-color-hex-triplet
-    ["P465"
-     "String"
-     "sRGB: sRGB hex triplet format for subject color [e.g. 7FFFD4] specifying the 8bit red, green and blue components"
-     "aquamarine <sRGB color hex triplet> 7FFFD4"
-     "-"],
-    :approved-by
-    ["P790"
-     "Item"
-     "item is approved by other item[s] [qualifier: statement is approved by other item[s]]"
-     "GNU General Public License <approved by> Open Source Initiative"
-     "-"],
-    :said-to-be-the-same-as
-    ["P460"
-     "Item"
-     "Wikimedia duplicated page: this item is said to be the same as that item, but the statement is disputed"
-     "Maidilibala <said to be the same as> Uskhal Khan Tögüs Temür"
-     "-"],
-    :categorys-main-topic
-    ["P301"
-     "Item"
-     "primary topic of the subject Wikimedia category"
-     "Category:Germany <category's main topic> Germany"
-     "topic's main category"],
-    :topics-main-category
-    ["P910"
-     "Item"
-     "Wikimedia category: main category"
-     "Asia <topic's main category> Category:Asia"
-     "category's main topic"],
-    :has-as-part
-    ["P527"
-     "Item"
-     "has part: part of this subject, also valuable subclass or exemplar. Inverse property of 'part of' [P361]."
-     "Adam and Eve <has as part> Adam"
-     "part of and does not have part"]
-    :continent
-    ["P30"
-     "Item"
-     "continent: continent of which the subject is a part. Use for countries, locations in Antarctica, and items located in countries that belong to more than one continent, e.g. Russian cities."
-     "India <continent> Asia"
-     "-"],
-    :coordinate-of-southernmost-point
-    ["P1333"
-     "Geographic coordinates"
-     "southernmost point of a place. For administrative entities this includes offshore islands"
-     "Columbia County <coordinate of southernmost point> 40°46'29.3592'N, 76°22'47.1252'W"
-     "coordinate of northernmost point"],
-    :income-classification-Philippines
-    ["P1879"
-     "Item"
-     "income class: classification grade of a Philippine local government unit based on income"
-     "Eastern Samar <income classification [Philippines]> 2nd provincial income class"
-     "-"],
-    :located-in-time-zone
-    ["P421"
-     "Item"
-     "time zone: time zone for this item"
-     "Cameroon <located in time zone> West Africa Time"
-     "-"],
-    :coordinate-of-easternmost-point
-    ["P1334"
-     "Geographic coordinates"
-     "easternmost point of a location"
-     "Columbia County <coordinate of easternmost point> 40°56'58.4376'N, 76°12'27.9072'W"
-     "coordinate of westernmost point"],
-    :population
-    ["P1082"
-     "Number"
-     "population size: number of people inhabiting the place; number of people of subject"
-     "San Francisco <population> 837,442"
-     "-"],
-    :coordinate-of-westernmost-point
-    ["P1335"
-     "Geographic coordinates"
-     "westernmost point of a location"
-     "Columbia County <coordinate of westernmost point> 41°9'17.5536'N, 76°38'22.7472'W"
-     "coordinate of easternmost point"],
-    :located-on-terrain-feature
-    ["P706"
-     "Item"
-     "landform: located on the specified landform or body of water. Should not be used when the value is only political/administrative [provinces, states, countries, etc.]."
-     "Oahu <located on terrain feature> Pacific Ocean"
-     "-"],
-    :direction-relative-to-location
-    ["P654"
-     "Item"
-     "cardinal direction: qualifier for geographical locations to express relative direction"
-     "Hennessey <direction relative to location> north"
-     "-"],
-    :coordinate-of-northernmost-point
-    ["P1332"
-     "Geographic coordinates"
-     "northernmost point of a location. For an administrative entity this includes offshore islands"
-     "Columbia County <coordinate of northernmost point> 41°18'29.682'N, 76°18'39.9312'W"
-     "coordinate of southernmost point"],
-    :country
-    ["P17"
-     "Item"
-     "country and former country: sovereign state of this item"
-     "Prince Edward Island <country> Canada"
-     "-"],
-    :place-name-sign
-    ["P1766"
-     "Commons media file"
-     "town sign: image of road sign with place name on it"
-     "Old Appleton <place name sign> Old Appleton, Missouri, Road sign.jpg"
-     "-"],
-    :located-on-street
-    ["P669"
-     "Item"
-     "street: street, road, or square, where the item is located. To add the number, use Property:P670 'street number' as qualifier"
-     "De Utrecht <located on street> Beurs van Berlage"
-     "-"]
-    :head-of-government
-    ["P6"
-     "Item"
-     "head of government: head of the executive power of a town, city, municipality, state, country, or other governmental body"
-     "Riga <head of government> Nils Ušakovs"
-     "-"],
-    :anthem
-    ["P85"
-     "Item"
-     "anthem: name of the subject's anthem"
-     "Canada <anthem> O Canada"
-     "-"],
-    :shares-border-with
-    ["P47"
-     "Item"
-     "political border and border: countries or administrative subdivisions that this item borders, of similar administrative rank [e.g. countries share borders with other countries]"
-     "People's Republic of China <shares border with> Mongolia"
-     "-"],
-    :basic-form-of-government
-    ["P122"
-     "Item"
-     "form of government: the subject's government"
-     "Mexico <basic form of government> republic"
-     "-"],
-    :capital
-    ["P36"
-     "Item"
-     "capital: location [city, municipality] of governmental seat of the country, or administrative territorial entity"
-     "United States of America <capital> Washington, D.C."
-     "capital of"],
-    :exclave-of
-    ["P500"
-     "Item"
-     "territory is legally or politically attached to a main territory with which it is not physically contiguous because of surrounding alien territory. It may also be an enclave."
-     "Ceuta <exclave of> Spain"
-     "-"],
-    :official-language
-    ["P37"
-     "Item"
-     "official language: language designated as official by this item"
-     "Russia <official language> Russian"
-     "-"],
-    :legislative-body
-    ["P194"
-     "Item"
-     "legislature: legislative body governing this entity; political institution with elected representatives, such as a parliament/legislature or council"
-     "Israel <legislative body> Knesset"
-     "-"],
-    :currency
-    ["P38"
-     "Item"
-     "currency: currency used by item"
-     "Mongolia <currency> Mongolian tögrög"
-     "-"],
-    :territory-claimed-by
-    ["P1336"
-     "Item"
-     "administrative divisions that claim control of a given area"
-     "Senkaku Islands <territory claimed by> Taiwan"
-     "-"],
-    :party-chief-representative
-    ["P210"
-     "Item"
-     "chief representative of a party in an institution or an administrative unit [use qualifier to identify the party]"
-     "Beijing <party chief representative> Guo Jinlong"
-     "-"],
-    :top-level-internet-domain
-    ["P78"
-     "Item"
-     "top-level domain: Internet domain name system top-level code"
-     "Honduras <top-level internet domain> .hn"
-     "-"],
-    :applies-to-territorial-jurisdiction
-    ["P1001"
-     "Item"
-     "the item [an institution, law, public office ...] belongs to or applies to the value [a territorial jurisdiction: a country, state, municipality, ...]"
-     "California Department of Transportation <applies to territorial jurisdiction> California"
-     "-"],
-    :enclave-within
-    ["P501"
-     "Item"
-     "territory is entirely surrounded by the other [enclaved]"
-     "Campione d'Italia <enclave within> Ticino"
-     "-"],
-    :head-of-state
-    ["P35"
-     "Item"
-     "head of state: official with the highest formal authority in a country"
-     "Germany <head of state> Joachim Gauck"
-     "-"],
-    :sister-city
-    ["P190"
-     "Item"
-     "twin town: twin towns, sister cities, twinned municipalities and other localities that have a partnership or cooperative agreement, either legally or informally acknowledged by their governments"
-     "Shanghai <sister city> Yokohama"
-     "-"],
-    :contains-settlement
-    ["P1383"
-     "Item"
-     "human settlement: settlement which an administrative division contains"
-     "Surdila-Greci <contains settlement> Brateșu Vechi"
-     "131"],
-    :located-in-the-administrative-territorial-entity
-    ["P131"
-     "Item"
-     "administrative territorial entity: the item is located on the territory of the following administrative entity. Use P276 [location] for specifying the location of non-administrative places and for items about events"
-     "Cambridge <located in the administrative territorial entity> Middlesex County"
-     "150"],
-    :contains-administrative-territorial-entity
-    ["P150"
-     "Item"
-     "[list of] direct subdivisions of an administrative territorial entity"
-     "Příbram District <contains administrative territorial entity> Dobříš"
-     "131"]})
+  {:SIGIC-group "P2165",
+   :United-Nations-Standard-Products-and-Services-Code "P2167",
+   :Wikimedia-portals-main-topic "P1204",
+   :ISO-standard "P503",
+   :acquisition-transaction "P1642",
+   :topics-main-Wikimedia-portal "P1151",
+   :sport "P641",
+   :habitat "P2974",
+   :replaced-by-structure "P1398",
+   :NMHH-film-rating "P2363",
+   :genre "P136",
+   :color-space "P929",
+   :religion "P140",
+   :represents-organisation "P1268",
+   :Biblioteca-Nacional-de-Chile-catalogue-number "P1966",
+   :ORCID "P496",
+   :pronunciation-audio "P443",
+   :introduced-feature "P751",
+   :programming-language "P277",
+   :parent-organization "P749",
+   :FAO-risk-status "P2371",
+   :canonization-status "P411",
+   :connector "P2935",
+   :BMLO "P865",
+   :main-regulatory-text "P92",
+   :AniDB-identifier "P1688",
+   :corporate-officer "P2828",
+   :GRIN-URL "P1421",
+   :South-African-municipality-code "P911",
+   :ResearcherID "P1053",
+   :number-of-participants "P1132",
+   :spacecraft "P1876",
+   :Facebook-Places-ID "P1997",
+   :GNIS-ID "P590",
+   :discography "P358",
+   :Wine-AppDB-ID "P600",
+   :medical-condition-treated "P2175",
+   :parent-astronomical-body "P397",
+   :NARA-person-ID "P1222",
+   :has-role "P2868",
+   :World-Glacier-Inventory-ID "P1404",
+   :EMLO-person-identifier "P1802",
+   :encoding "P3294",
+   :connecting-service "P1192",
+   :official-website "P856",
+   :member-of-political-party "P102",
+   :Dialnet-book "P1608",
+   :terminus "P559",
+   :connects-with "P2789",
+   :executive-producer "P1431",
+   :Swedish-civil-parish-code-ATA-code "P777",
+   :number-of-injured "P1339",
+   :aspect-ratio "P2061",
+   :mass-excess "P2160",
+   :encodes "P688",
+   :BiblioNet-publication-identifier "P2187",
+   :LAU "P782",
+   :MPAA-film-rating "P1657",
+   :stage-classification "P2417",
+   :net-worth "P2218",
+   :number-of-speakers "P1098",
+   :Code-of-nomenclature "P944",
+   :HURDAT-identifier "P502",
+   :OpenCorporates-ID "P1320",
+   :magnetic-ordering "P922",
+   :Kijkwijzer-rating "P2684",
+   :investor "P1951",
+   :damaged "P3081",
+   :UN-code-classification "P875",
+   :ISO-9-1995 "P2183",
+   :IMO-ship-number "P458",
+   :BiblioNet-author-identifier "P2188",
+   :start-point "P1427",
+   :lithography "P2157",
+   :DLI-identifier "P2185",
+   :UN-class "P874",
+   :exemplar-of "P1574",
+   :stepfather "P43",
+   :SIPA-identifier "P1700",
+   :academic-degree "P512",
+   :ISO-639-3-code "P220",
+   :BBC-Genome-identifier "P1573",
+   :UNESCO-language-status "P1999",
+   :noble-family "P53",
+   :compression-ratio "P1247",
+   :BBC-Your-Paintings-artist-identifier "P1367",
+   :online-service "P2361",
+   :URI-pattern-for-RDF-resource "P1921",
+   :KLG-Kritisches-Lexikon-der-Gegenwartsliteratur "P1288",
+   :strand-orientation "P2548",
+   :Ensembl-Transcript-ID "P704",
+   :species-kept "P1990",
+   :bug-tracking-system "P1401",
+   :edibility "P789",
+   :absolute-magnitude "P1457",
+   :inception "P571",
+   :source-of-income "P2770",
+   :Gene-Atlas-Image "P692",
+   :category-related-to-list "P1754",
+   :UN-LOCODE "P1937",
+   :external-data-available-at "P1325",
+   :RSL-identifier-person "P947",
+   :movement "P135",
+   :OS-grid-reference "P613",
+   :described-at-URL "P973",
+   :followed-by "P156",
+   :negative-therapeutic-predictor "P3355",
+   :Swedish-county-code "P507",
+   :first-line "P1922",
+   :Bildindex-der-Kunst-und-Architektur-ID "P2092",
+   :terminus-location "P609",
+   :short-name "P1813",
+   :Italian-Chamber-of-Deputies-ID "P1341",
+   :penalty "P1596",
+   :union-of "P2737",
+   :video "P10",
+   :ISO-4-abbreviation "P1160",
+   :vapor-pressure "P2119",
+   :interested-in "P2650",
+   :chemical-formula "P274",
+   :Disease-Ontology-ID "P699",
+   :increased-expression-in "P1911",
+   :ISO-3166-3 "P773",
+   :chairperson "P488",
+   :chromosome "P1057",
+   :KMDb-person-ID "P1649",
+   :CERO-rating "P853",
+   :list-related-to-category "P1753",
+   :Iranian-National-Heritage-registration-number "P1369",
+   :RXNO-Ontology "P2106",
+   :this-taxon-is-source-of "P1672",
+   :name-in-kana "P1814",
+   :legal-citation-of-this-text "P1031",
+   :Bluebook-abbreviation "P1162",
+   :parent-company "P749",
+   :torch-lit-by "P545",
+   :position-played-on-team---speciality "P413",
+   :ZDB-identifier "P1042",
+   :Gram-staining "P2597",
+   :input-device "P479",
+   :compressor-type "P1221",
+   :office-held-by-head-of-the-organisation "P2388",
+   :employer "P108",
+   :SIRUTA-code "P843",
+   :GSRR-rating "P916",
+   :Righteous-Among-The-Nations-ID "P1979",
+   :BGS-Lexicon-ID "P732",
+   :BLDAM-object-ID "P2081",
+   :emissivity "P1295",
+   :explosive-velocity "P2231",
+   :BioLib-ID "P838",
+   :negative-diagnostic-predictor "P3357",
+   :ballots-cast "P1868",
+   :g-factor "P1097",
+   :avionics "P878",
+   :attendance "P1110",
+   :diplomatic-relation "P530",
+   :main-building-contractor "P193",
+   :IAAF-ID "P1146",
+   :adjacent-building "P3032",
+   :Twitter-username "P2002",
+   :positive-therapeutic-predictor "P3354",
+   :depicts "P180",
+   :replaced-by "P1366",
+   :locator-map-image "P242",
+   :title-of-chess-player "P2962",
+   :SIGIC-institution "P2166",
+   :port-of-registry "P532",
+   :participating-team "P1923",
+   :standards-body "P1462",
+   :RSL-scanned-books-identifier "P1815",
+   :MTR-station-code "P1377",
+   :Category-for-pictures-taken-with-camera "P2033",
+   :adjacent-station "P197",
+   :dan-kyu-rank "P468",
+   :kinematic-viscosity "P2118",
+   :BBC-Your-Paintings-venue-identifier "P1602",
+   :payment-types-accepted "P2851",
+   :GHS-hazard-statement "P728",
+   :commander-of "P598",
+   :author-ID "P1556",
+   :positive-prognostic-predictor "P3358",
+   :Danish-Bibliometric-Research-Indicator-level "P1240",
+   :continent "P30",
+   :has-parts-of-the-class "P2670",
+   :location-map "P1943",
+   :encoded-by "P702",
+   :subject-of "P805",
+   :BBC-Your-Paintings-artwork-identifier "P1679",
+   :CrunchBase-person-ID "P2087",
+   :ancestral-home "P66",
+   :Open-Food-Facts-food-additive-slug "P1820",
+   :this-zoological-name-is-coordinate-with "P2743",
+   :BNE-identifier "P950",
+   :film-crew-member "P3092",
+   :valvetrain-configuration "P1078",
+   :UBIGEO-code "P844",
+   :maintained-by "P126",
+   :characters "P674",
+   :Solid-solution-series-with "P2155",
+   :chivalric-order "P550",
+   :applies-to-jurisdiction "P1001",
+   :Pseudo-crystal-habit "P2156",
+   :FISA-ID "P2091",
+   :mode-of-inheritance "P1199",
+   :torque "P2230",
+   :legal-form "P1454",
+   :United-States-Armed-Forces-service-number "P2028",
+   :mouth-of-the-watercourse "P403",
+   :ICAA-rating "P3306",
+   :admissible-rule-in "P2577",
+   :Freebase-identifier "P646",
+   :edition-number "P393",
+   :presenter "P371",
+   :foods-traditionally-associated "P868",
+   :National-Heritage-List-for-England-number "P1216",
+   :Norway-Import-Service-and-Registration-Authority-publisher-code "P1275",
+   :Canmore-ID "P718",
+   :described-by-source "P1343",
+   :age-of-onset "P2841",
+   :Danish-Bibliometric-Research-Indicator-BFI-SNO-CNO "P1250",
+   :Palissy-identifier "P481",
+   :head-of-government "P6",
+   :Gregory–Aland–Number "P1577",
+   :vice-county "P1887",
+   :pennant-number "P879",
+   :pressure "P2077",
+   :genetic-association "P2293",
+   :galaxy-morphological-type "P223",
+   :Dictionary-of-Medieval-Names-from-European-Sources-entry "P1888",
+   :SBN-identifier "P396",
+   :catholic.ru-identifier "P1453",
+   :scheduled-service-destination "P521",
+   :mass-weight "P2067",
+   :parliamentary-term "P2937",
+   :Max-TDP "P2229",
+   :notable-work "P800",
+   :Sandbox-TimeValue "P578",
+   :parity "P1123",
+   :Skyscraper-Center-ID "P1305",
+   :has-grammatical-mood "P3161",
+   :streaming-media-URL "P963",
+   :taxon-synonym "P1420",
+   :geography-of-topic "P2633",
+   :transmitted-signal "P1170",
+   :topics-main-category "P910",
+   :FCC-Facility-ID "P1400",
+   :bodies-of-water-basin-category "P1200",
+   :box-office "P2142",
+   :statistical-unit "P2353",
+   :OpenStreetMap-tag-or-key "P1282",
+   :pendant-of "P1639",
+   :orbital-period "P2146",
+   :Index-Fungorum-ID "P1391",
+   :producer "P162",
+   :hymenium-type "P783",
+   :fabrication-method "P2079",
+   :Sandbox-GeoCoordinateValue "P626",
+   :Masaryk-University-person-ID "P1803",
+   :phone-number "P1329",
+   :Power-of-10-athlete-ID "P2090",
+   :NARA-geographic-ID "P1224",
+   :CrunchBase-organisation-ID "P2088",
+   :legislated-by "P467",
+   :afflicts "P689",
+   :space-group "P690",
+   :decreased-expression-in "P1910",
+   :fracturing "P538",
+   :member-of-sports-team "P54",
+   :illustrator "P110",
+   :position-held "P39",
+   :statement-disputed-by "P1310",
+   :IPNI-author-ID "P586",
+   :maximum-thrust "P2228",
+   :Pokédex-number "P1112",
+   :anthem "P85",
+   :voice-type "P412",
+   :birth-name "P1477",
+   :AlloCiné-series-ID "P1267",
+   :dmoz "P998",
+   :NDL-editions "P1054",
+   :binding-of-software-library "P1372",
+   :AAT-identifier "P1014",
+   :average-shot-length "P2208",
+   :SWB-editions "P1044",
+   :local-dialing-code "P473",
+   :instrument "P1303",
+   :IRS-Employer-Identification-Number "P1297",
+   :Cycling-Quotient-identifier "P1541",
+   :discovery-method "P1046",
+   :general-manager "P505",
+   :Terminologia-Histologica-TH "P1694",
+   :isomeric-SMILES "P2017",
+   :qualifies-for-event "P3085",
+   :valid-in-period "P1264",
+   :creator "P170",
+   :Gran-Enciclopèdia-Catalana-ID "P1296",
+   :airline-alliance "P114",
+   :depositor "P2058",
+   :subject-item-of-this-property "P1629",
+   :electoral-district "P768",
+   :MarineTraffic-Port-ID "P1624",
+   :Sycomore-ID "P1045",
+   :RARS-rating "P2637",
+   :ICAO-airport-code "P239",
+   :National-Gallery-of-Victoria-artist-identifier "P2041",
+   :mandatory-qualifier "P1646",
+   :shares-border-with "P47",
+   :military-designation "P798",
+   :sockets-supported "P1041",
+   :main-subject "P921",
+   :docking-port "P546",
+   :ISBN-10 "P957",
+   :stipe-character "P786",
+   :Meteoritical-Bulletin-Database-ID "P824",
+   :inscription "P1684",
+   :culture "P2596",
+   :Swedish-district-code "P1841",
+   :publisher "P123",
+   :orbital-inclination "P2045",
+   :score-method "P1443",
+   :in-work "P2553",
+   :Dana-8th-edition "P714",
+   :size-of-team-at-start "P2103",
+   :MusicBrainz-release-group-ID "P436",
+   :script-directionality "P1406",
+   :molecular-function "P680",
+   :Open-Food-Facts-food-category-slug "P1821",
+   :ISTAT-ID "P635",
+   :issue "P433",
+   :Commons-Institution-page "P1612",
+   :color "P462",
+   :Scopus-Affiliation-ID "P1155",
+   :Fach "P1731",
+   :Church-of-Sweden-parish-code "P778",
+   :MusicBrainz-series-ID "P1407",
+   :topics-main-template "P1424",
+   :stated-in "P248",
+   :NKC-identifier "P691",
+   :crew-member "P1029",
+   :Italian-cadastre-code "P806",
+   :scan-file-Commons "P996",
+   :Filmiroda-rating "P2747",
+   :narrator "P2438",
+   :astronomical-body "P397",
+   :IPTC-Media-Topic "P1152",
+   :CDD-Public-ID "P2086",
+   :MovieMeter-movie-ID "P1970",
+   :name-in-native-language "P1559",
+   :PubChem-ID-CID "P662",
+   :maximum-glide-ratio "P1470",
+   :constellation "P59",
+   :World-Heritage-criteria-2005 "P2614",
+   :Aviation-Safety-Network-Wikibase-Occurrence "P1760",
+   :number-of-pages "P1104",
+   :instance-of "P31",
+   :NLC-authorities "P1213",
+   :CPDL-ID "P2000",
+   :service-entry "P729",
+   :atomic-number "P1086",
+   :Exif-model "P2009",
+   :corresponding-template "P2667",
+   :FIPS-10-4-countries-and-regions "P901",
+   :Thai-cultural-heritage-ID "P1626",
+   :designed-to-carry "P3349",
+   :after-a-work-by "P1877",
+   :PublicWhip-identifier "P2169",
+   :field-of-this-occupation "P425",
+   :Wikimedia-database-name "P1800",
+   :IRC-channel "P1613",
+   :CNO-11-occupation-code "P1022",
+   :Wikidata-property "P1687",
+   :GPU "P2560",
+   :type-of-unit-for-this-property "P2876",
+   :Social-Science-Research-Network-ID "P893",
+   :surface-played-on "P765",
+   :numeric-value "P1181",
+   :executive-authority "P797",
+   :China-administrative-division-code "P442",
+   :NARA-topical-subject-ID "P1225",
+   :number-of-edges "P1569",
+   :to-the-subject "P767",
+   :color-index "P1458",
+   :Romania-LMI-code "P1770",
+   :Nasjonalbiblioteket-photographer-ID "P1847",
+   :OmegaWiki-Defined-Meaning "P1245",
+   :gait "P2839",
+   :addressee "P1817",
+   :original-network "P449",
+   :Gaoloumi-ID "P1837",
+   :code-Inventari-del-Patrimoni-Arquitectònic-de-Catalunya "P1600",
+   :flux "P2221",
+   :IETF-language-tag "P305",
+   :anatomical-location "P927",
+   :parent "s",
+   :Wikidata-example-URL "P1860",
+   :Dharma-Drum-Buddhist-College-person-ID "P1187",
+   :Carnegie-Classification-of-Institutions-of-Higher-Education "P2643",
+   :ISO-639-6-code "P221",
+   :InChIKey "P235",
+   :IPA "P898",
+   :gene-inversion-association-with "P1915",
+   :capacity "P1083",
+   :Joconde-ID "P347",
+   :Slovene-Cultural-Heritage-Register-ID "P1587",
+   :NOR "P464",
+   :candidate "P726",
+   :number-of-seats "P1342",
+   :excluding "P1011",
+   :package-management-system "P3033",
+   :EHAK-id "P1140",
+   :connecting-line "P81",
+   :date-of-disappearance "P746",
+   :professional-or-sports-partner "P1327",
+   :solvent "P2178",
+   :OBSOLETE-birth-name-use-P1477 "P513",
+   :license "P275",
+   :studied-by "P2579",
+   :OpenPlaques-subject-identifier "P1430",
+   :KEGG-ID "P665",
+   :incertae-sedis "P678",
+   :GHS-signal-word "P1033",
+   :basionym "P566",
+   :LibraryThing-work-identifier "P1085",
+   :source-website-for-the-property "P1896",
+   :coordinate-of-southernmost-point "P1333",
+   :place-of-publication "P291",
+   :including "P1012",
+   :series "P179",
+   :biography-at-the-Bundestag-of-Germany "P1713",
+   :endianness "P3374",
+   :lake-inflows "P200",
+   :temporal-range-start "P523",
+   :dual-to "P1322",
+   :stepmother "P44",
+   :innervates "P3190",
+   :judge "P1594",
+   :highest-note "P1897",
+   :Catalan-object-of-cultural-interest-ID "P1586",
+   :director "P57",
+   :total-liabilities "P2138",
+   :CODEN "P1159",
+   :teaching-method "P2392",
+   :train-depot "P834",
+   :Parliamentary-record-identifier "P2172",
+   :place-of-origin-Switzerland "P1321",
+   :owner-of "P1830",
+   :basic-form-of-government "P122",
+   :protocol "P2700",
+   :taxon-common-name "P1843",
+   :Geokod "P1172",
+   :by-product-of "P2822",
+   :NDL-identifier "P349",
+   :floruit "P1317",
+   :Gewässerkennzahl "P1183",
+   :Google-Scholar-ID "P1960",
+   :IGESPAR-identifier "P1702",
+   :found-in-taxon "P703",
+   :NLI-Israel-identifier "P949",
+   :DGO4-identifier "P1133",
+   :They-Work-for-You-identifier "P2171",
+   :winner "P1346",
+   :partner "P451",
+   :MusicBrainz-area-ID "P982",
+   :EE-breed-number "P303",
+   :Terminologia-Embryologica-TE "P1693",
+   :natural-product-of-taxon "P1582",
+   :worshipped-by "P1049",
+   :ISO-3166-1-numeric-code "P299",
+   :parents-of-this-hybrid "P1531",
+   :languages-spoken-written-or-signed "P1412",
+   :DAAO-identifier "P1707",
+   :collection-or-exhibition-size "P1436",
+   :date-of-death "P570",
+   :streak-color "P534",
+   :image-of-grave "P1442",
+   :FSB-speed "P2150",
+   :HDS "P902",
+   :speed "P2052",
+   :architect "P84",
+   :BIBSYS-identifier "P1015",
+   :Mercalli-intensity-scale "P2784",
+   :scale "P1752",
+   :transmitted-signal-type "P1170",
+   :Anime-News-Network-company-ID "P1983",
+   :Austrian-municipality-key "P964",
+   :Glottolog-code "P1394",
+   :allegiance "P945",
+   :Emporis-ID "P455",
+   :overlies "P568",
+   :callsign-of-airline "P432",
+   :Strunz-8th-edition-series-ID "P711",
+   :owned-by "P127",
+   :Roman-praenomen "P2358",
+   :Jufo-ID "P1277",
+   :consecrator "P1598",
+   :number-of-vertices "P1570",
+   :AllMusic-composition-ID "P1994",
+   :Pokémon-browser-number "P1685",
+   :taxon-range-map-image "P181",
+   :Refseq-Genome-ID "P2249",
+   :captain "P634",
+   :grammatical-option-indicates "P2591",
+   :INSEE-municipality-code "P374",
+   :DiseasesDB "P557",
+   :market-capitalization "P2226",
+   :removed-feature "P756",
+   :ACM-Classification-Code-2012 "P2179",
+   :solubility "P2177",
+   :asteroid-spectral-type "P720",
+   :Baseball-Reference.com-minor-league-player-ID "P1826",
+   :qualifies-for "P2094",
+   :NSZL-identifier "P951",
+   :worldfootball.net-ID "P2020",
+   :elected-in "P2715",
+   :RefSeq-RNA-ID "P639",
+   :launch-contractor "P1079",
+   :Netflix-identifier "P1874",
+   :maximum-Strahler-number "P1548",
+   :speed-of-sound "P2075",
+   :has-phoneme "P2587",
+   :depicted-by "P1299",
+   :highway-system "P16",
+   :native-language "P103",
+   :Kiev-street-code "P1854",
+   :office-contested "P541",
+   :InChI "P234",
+   :Thailand-central-administrative-unit-code "P1067",
+   :uncertainty-corresponds-to "P2571",
+   :Ensembl-Protein-ID "P705",
+   :drafted-by "P647",
+   :printed-by "P872",
+   :has-list "P2354",
+   :Human-Development-Index "P1081",
+   :Mohs-hardness "P1088",
+   :structure-replaced-by "P167",
+   :posthumous-name "P1786",
+   :external-superproperty "P2235",
+   :first-performance "P1191",
+   :BBC-program-identifier "P827",
+   :Vaccine-Ontology-ID "P1928",
+   :solves "P2159",
+   :use "P366",
+   :Australian-Classification "P3156",
+   :child-astronomical-body "P398",
+   :operating-area "P2541",
+   :power-output "P2109",
+   :co-driver "P2095",
+   :is-verso-of "P2682",
+   :screenwriter "P58",
+   :ARICNS "P999",
+   :Sandbox-Item "P369",
+   :via "P2825",
+   :rector "P1075",
+   :national-team-caps "P1129",
+   :CANTIC "P1273",
+   :Cambridge-Alumni-Database-ID "P1599",
+   :proved-by "P1318",
+   :affiliation "P1416",
+   :denkXweb-identifier "P1769",
+   :lowest-note "P1898",
+   :image-of-function "P2396",
+   :bathymetry-image "P207",
+   :series-length "P1113",
+   :Swiss-parliament-identifier "P1307",
+   :solved-by "P1136",
+   :State-Catalogue-of-Geographical-Names-identifier-Russia "P1397",
+   :ZooBank-publication-ID "P2007",
+   :board-member "P3320",
+   :motto "P1546",
+   :storyboard-artist "P3275",
+   :cover-artist "P736",
+   :open-period-from "P3027",
+   :unveiled-by "P1656",
+   :coordinates-of-the-point-of-view "P1259",
+   :upper-flammable-limit "P2203",
+   :heat-capacity "P2056",
+   :source-of-energy "P618",
+   :Wikidata-property-example "P1855",
+   :significant-drug-interaction "P769",
+   :floors-above-ground "P1101",
+   :ISO-15924-alpha-4-or-numeric-code "P506",
+   :occupation "P106",
+   :theme-music "P942",
+   :DSH-object-ID "P1822",
+   :minor-planet-group "P196",
+   :MCN-code "P1987",
+   :industry "P452",
+   :stereoisomer-of "P3364",
+   :Ethnologue.com-code "P1627",
+   :Colour-Index-International-constitution-ID "P2027",
+   :Wiki-Loves-Monuments-ID "P2186",
+   :day-of-week "P2894",
+   :genomic-start "P644",
+   :Journalisted-ID "P1714",
+   :ResearchGate-ID "P2038",
+   :Gene-Ontology-ID "P686",
+   :symptoms "P780",
+   :work-period-end "P2032",
+   :Sandbox-Monolingual-text "P1450",
+   :flag-image "P41",
+   :investigated-by "P1840",
+   :language-of-work-or-name "P407",
+   :organisation-directed-from-the-office "P2389",
+   :orbits-completed "P1418",
+   :as "P794",
+   :antagonist-muscle "P2329",
+   :Trismegistos-Geo-ID "P1958",
+   :Iran-statistics-ID "P1010",
+   :Roman-cognomen "P2365",
+   :editions "P747",
+   :Beilstein-Registry-Number "P1579",
+   :authority "P797",
+   :MacTutor-id-biographies "P1563",
+   :NPG-ID "P1931",
+   :software-quality-assurance "P2992",
+   :origin-of-the-watercourse "P885",
+   :ISNI "P213",
+   :NATO-code-for-grade "P1611",
+   :day-in-year-for-periodic-occurrence "P837",
+   :is-a-list-of "P360",
+   :ATP-ID "P536",
+   :engine-configuration "P1002",
+   :Minor-Planet-Center-observatory-code "P717",
+   :ICTV-virus-ID "P1076",
+   :place-of-marriage "P2842",
+   :Flora-of-North-America-taxon-ID "P1727",
+   :cruise-speed "P2217",
+   :number-of-casualties "P1590",
+   :flag "P163",
+   :NARA-specific-records-type-ID "P1226",
+   :writable-file-format "P1073",
+   :designed-by "P287",
+   :manager-director "P1037",
+   :member-of-the-deme "P2462",
+   :Operational-Requirement-of-the-UK-Air-Ministry "P862",
+   :burial-plot-reference "P965",
+   :author-citation-zoology "P835",
+   :medical-examinations "P923",
+   :female-population "P1539",
+   :highway-marker "P14",
+   :filming-location "P915",
+   :ISO-3166-2-code "P300",
+   :site-of-astronomical-discovery "P65",
+   :gene-symbol "P353",
+   :capital "P36",
+   :location-of-spacecraft-launch "P448",
+   :highest-point "P610",
+   :SSR-Name-ID "P1850",
+   :YerelNet-village-ID "P2123",
+   :Saskatchewan-Register-of-Heritage-Property-identifier "P845",
+   :executive-body "P208",
+   :production-volume "P2197",
+   :US-Congress-Bio-identifier "P1157",
+   :official-residence "P263",
+   :Theaterlexikon-der-Schweiz-online-ID "P1362",
+   :Dialnet-author-ID "P1607",
+   :Spotify-artist-ID "P1902",
+   :apoapsis "P2243",
+   :PubMed-ID "P698",
+   :interleaves-with "P514",
+   :indigenous-to "P2341",
+   :signature "P109",
+   :Information-Center-for-Israeli-Art-artist-identifier "P1736",
+   :activating-neurotransmitter "P928",
+   :NCL-identifier "P1048",
+   :source-code-repository "P1324",
+   :angular-distance "P2212",
+   :neutron-number "P1148",
+   :ProCyclingStats-ID "P1663",
+   :Library-of-Congress-JukeBox-ID "P2089",
+   :Encyclopædia-Britannica-Online-ID "P1417",
+   :Oxford-Biography-Index-Number "P1415",
+   :officially-opened-by "P542",
+   :equivalent-class "P1709",
+   :curator "P1640",
+   :nickname "P1449",
+   :LfDS-object-ID "P1708",
+   :position-angle "P2211",
+   :Anime-News-Network-anime-ID "P1985",
+   :Structurae-ID-structure "P454",
+   :influenced-by "P737",
+   :KH "P1818",
+   :received-signal "P1194",
+   :voice-actor "P725",
+   :start-time "P580",
+   :frequency "P2144",
+   :Swiss-Football-Association-Club-Number "P1241",
+   :journey-destination "P1444",
+   :time-of-discovery "P575",
+   :Historic-Scotland-ID "P709",
+   :Munzinger-IBA "P1284",
+   :elevation-above-sea-level "P2044",
+   :from-fictional-universe "P1080",
+   :FIPS-6-4-US-counties "P882",
+   :Swedish-urban-area-code "P775",
+   :taxonomic-type "P427",
+   :measured-physical-quantity "P111",
+   :lifestyle "P1576",
+   :doctoral-thesis "P1026",
+   :Facebook-ID "P2013",
+   :Instagram-username "P2003",
+   :taxon-rank "P105",
+   :GSS-code-2011 "P836",
+   :NALT-id "P2004",
+   :diplomatic-mission-sent "P531",
+   :time-of-earliest-written-record "P1249",
+   :professional-name-Japan "P2838",
+   :foreign-direct-investment-net-outflows "P2140",
+   :BNC-identifier "P1890",
+   :ABoK-number "P1806",
+   :solid-solution-series-with "P2155",
+   :place-of-detention "P2632",
+   :Entrez-Gene-ID "P351",
+   :FIPS-5-2-code-for-US-states "P883",
+   :flash-point "P2128",
+   :focal-length "P2151",
+   :reference-URL "P854",
+   :Commons-Creator-page "P1472",
+   :Portuguese-Job-Code-CPP-2010 "P1052",
+   :birthday "P3150",
+   :E-number "P628",
+   :OpenPlaques-plaque-identifier "P1893",
+   :DVN-identifier "P1788",
+   :thermal-conductivity "P2068",
+   :mother "P25",
+   :inverse-of "P1696",
+   :Drugbank-ID "P715",
+   :Sandbox-String "P370",
+   :home-port "P504",
+   :country-for-sport "P1532",
+   :CiNii-author-identifier "P271",
+   :Canadian-Register-of-Historic-Places-identifier "P477",
+   :Lost-Art-ID "P1428",
+   :exclave-of "P500",
+   :total-revenue "P2139",
+   :separated-from "P807",
+   :subclass-of "P279",
+   :Alexa-rank "P1661",
+   :Kulturminne-identifier "P758",
+   :number-suspected "P1676",
+   :ASI-Monument-ID "P1371",
+   :width "P2049",
+   :number-of-matches-played "P1350",
+   :senat.fr-ID "P1808",
+   :Commons-gallery "P935",
+   :Köppen-climate-classification "P2564",
+   :VIAF-identifier "P214",
+   :follows "P155",
+   :instruction-set "P1068",
+   :Soccerbase-manager-id "P2195",
+   :AcademiaNet "P2080",
+   :Library-of-Congress-Classification "P1149",
+   :regulates-molecular-biology "P128",
+   :VIOLIN-ID "P1925",
+   :ZVG-number "P679",
+   :PSS-Archi-architect-id "P2194",
+   :BAV-Vatican-Library-identifier "P1017",
+   :electorate "P1831",
+   :operations-and-procedures-key-OPS "P1691",
+   :RKDartists "P650",
+   :postsynaptic-connection "P926",
+   :ChEBI-ID "P683",
+   :Rijksmonument-identifier "P359",
+   :Wikidata-example-quantity "P1862",
+   :IPI-number "P1828",
+   :Digital-Atlas-of-the-Roman-Empire-ID "P1936",
+   :victory "P2522",
+   :McCune-Reischauer-romanization "P1942",
+   :Revised-Hepburn-romanization "P2125",
+   :Linguist-list-code "P1232",
+   :classification-of "P2502",
+   :next-crossing-upstream "P2673",
+   :manner-of "P1777",
+   :signatory "P1891",
+   :number-of-platform-tracks "P1103",
+   :KDG-Komponisten-der-Gegenwart "P1287",
+   :laws-applied "P3014",
+   :wheelchair-accessibility "P2846",
+   :official-blog "P1581",
+   :spacecraft-docking-undocking "P622",
+   :WALS-lect-code "P1466",
+   :spoken-text-audio "P989",
+   :Florentine-musea-catalogue-ID "P2242",
+   :doubles-record "P555",
+   :e-mail "P968",
+   :oath-of-office-date "P1734",
+   :SOC-Occupation-Code-2010 "P919",
+   :Revised-Romanisation "P2001",
+   :first-aid-measures "P2239",
+   :Yandex.Music-ID "P1553",
+   :Hansard-ID "P2015",
+   :DOI "P356",
+   :headquarters-location "P159",
+   :crosses "P177",
+   :ISFDB-publisher-ID "P1239",
+   :NASA-biographical-ID "P2030",
+   :total-equity "P2137",
+   :number-of-seats-of-the-organization-in-legislature "P1410",
+   :LNB-identifier "P1368",
+   :points-for "P1358",
+   :categorys-main-topic "P301",
+   :describes-the-fictional-universe "P1434",
+   :Aviation-Safety-Network-accident-description-ID "P1755",
+   :Ensembl-Gene-ID "P594",
+   :Wikisource-index-page "P1957",
+   :Swedish-municipality-code "P525",
+   :Pleiades-identifier "P1584",
+   :Danish-urban-area-code "P1894",
+   :BBC-Your-Paintings-collection-identifier "P1751",
+   :series-ordinal "P1545",
+   :WWF-ecoregion-code "P1294",
+   :languages-spoken-or-published "P1412",
+   :RSL-editions "P1973",
+   :OBSOLETE-inscription-use-P1684 "P438",
+   :argument-of-periapsis "P2248",
+   :USDA-NDB-number "P1978",
+   :interaction "P517",
+   :anatomical-branch-of "P3261",
+   :doctoral-student "P185",
+   :LCOC-LCCN-bibliographic "P1144",
+   :Patientplus-ID "P1461",
+   :ISO-3166-1-alpha-3-code "P298",
+   :BoxRec-ID "P1967",
+   :end-time "P582",
+   :flag-bearer "P3022",
+   :China-Vitae-ID "P1631",
+   :set-in-period "P2408",
+   :ITF-ID "P599",
+   :sexual-orientation "P91",
+   :Kallikratis-geographical-code "P1116",
+   :for-work "P1686",
+   :RISS-catalog "P1575",
+   :brother "P7",
+   :yard-number "P617",
+   :parent-peak "P3137",
+   :NLR-Romania-identifier "P1003",
+   :At-the-Circulating-Library-ID "P1564",
+   :Munzinger-Sport "P1285",
+   :US-Federal-Election-Commission-identifier "P1839",
+   :SUDOC-editions "P1025",
+   :family-name-identical-to-this-first-name "P1533",
+   :mascot "P822",
+   :decomposition-point "P2107",
+   :Neurolex-ID "P696",
+   :United-States-Army-and-Air-Force-aircraft-designation "P897",
+   :number-of-children "P1971",
+   :temple-name "P1785",
+   :reporting-mark "P1471",
+   :original-language-of-work "P364",
+   :CONOR-identifier "P1280",
+   :honorific-prefix "P511",
+   :subproperty-of "P1647",
+   :arterial-supply "P2286",
+   :Z39.5-abbreviation "P1161",
+   :UCI-code "P1998",
+   :production-designer "P2554",
+   :matches-games-drawn-tied "P1357",
+   :anti-virus-alias "P1845",
+   :develops-from "P3094",
+   :Chinese-Library-Classification "P1189",
+   :bibcode "P1300",
+   :membership "P2124",
+   :part-of "P361",
+   :location-of-formation "P740",
+   :feed-URL "P1019",
+   :page "P304",
+   :Mémoire-des-hommes "P2071",
+   :electronegativity "P1108",
+   :spin-quantum-number "P1122",
+   :Rundata "P1261",
+   :HMDB-ID "P2057",
+   :Wikidata-example-media-file "P1856",
+   :Project-Gutenberg-author-ID "P1938",
+   :political-ideology "P1142",
+   :Bradley-and-Fletcher-checklist-number "P1743",
+   :parliament.uk-ID "P1996",
+   :recording-or-performance-of "P2550",
+   :PIJAS "P508",
+   :CBDB-ID "P497",
+   :stock-exchange "P414",
+   :educated-at "P69",
+   :wheel-arrangement "P2978",
+   :subsidiary "P355",
+   :participant "P710",
+   :NIAID-ChemDB-ID "P2065",
+   :practiced-by "P3095",
+   :SMDB-ID "P1316",
+   :Encyclopedia-of-Life-ID "P830",
+   :HSDB-ID "P2062",
+   :category-combines-topics "P971",
+   :archive-URL "P1065",
+   :light-characteristic-of-a-lighthouse "P1030",
+   :recovered-by "P3093",
+   :KLfG-Kritisches-Lexikon-der-fremdsprachigen-Gegenwartsliteratur "P1289",
+   :Hall-of-Valor-ID "P1869",
+   :blood-type "P1853",
+   :crystal-habit "P565",
+   :ISCO-occupation-code "P952",
+   :International-Nuclear-Event-Scale "P2127",
+   :award-received "P166",
+   :oath-made-by "P543",
+   :Helveticarchives-ID "P1255",
+   :relative-to "P2210",
+   :PCP-reference-number "P381",
+   :gene-substitution-association-with "P1916",
+   :BerlPap-identifier "P1948",
+   :phase-of-matter "P515",
+   :GUI-toolkit-or-framework "P1414",
+   :route-number "P1671",
+   :National-Portrait-Gallery-London-person-identifier "P1816",
+   :Internet-Archive-identifier "P724",
+   :Declarator.org-ID "P1883",
+   :cash "P2232",
+   :port "P1641",
+   :running-time "P2047",
+   :cast-member "P161",
+   :office-held-by-head-of-state "P1906",
+   :given-name "P735",
+   :CALIS "P270",
+   :Danish-National-Filmography-ID "P1804",
+   :NTA-identifier-Netherlands "P1006",
+   :date-of-birth "P569",
+   :BAnQ-ID "P1823",
+   :ComicBookDB-ID "P1392",
+   :BBFC-rating "P2629",
+   :narrative-location "P840",
+   :Plazi-ID "P1992",
+   :eligible-voters "P1867",
+   :plea "P1437",
+   :IHSI-ID "P1370",
+   :Dewey-Decimal-Classification "P1036",
+   :World-Health-Organisation-International-Nonproprietary-Name "P1805",
+   :History-of-Parliament-ID "P1614",
+   :biosafety-level "P1604",
+   :FilmAffinity-identifier "P480",
+   :bridgehunter.com-ID "P1381",
+   :number-of-deaths "P1120",
+   :draft-pick-number "P1836",
+   :African-Plant-Database "P2036",
+   :head-coach "P286",
+   :ammunition "P739",
+   :radius "P2120",
+   :JSTOR-article-ID "P888",
+   :ABS-ASCL-code "P1251",
+   :located-at-street-address "P969",
+   :MycoBank-taxon-name-identifier "P962",
+   :next-crossing-downstream "P2674",
+   :NCI-Thesaurus-ID "P1748",
+   :SIREN-number "P1616",
+   :appears-in-the-heritage-monument-list "P2817",
+   :primary-destinations "P1302",
+   :official-language "P37",
+   :Chess-Club-ID "P1666",
+   :time-of-spacecraft-orbit-decay "P621",
+   :killed-by "P157",
+   :FSK-film-rating "P1981",
+   :combustion-enthalpy "P2117",
+   :Open-Library-identifier "P648",
+   :seal-image "P158",
+   :homoglyph "P2444",
+   :Cycling-Archives-Cyclist-ID "P1409",
+   :score-by "P447",
+   :b-side "P1432",
+   :National-Library-of-Ireland-authority "P1946",
+   :SELIBR "P906",
+   :road-map "P15",
+   :NUKAT-WarsawU-authorities "P1207",
+   :hazard-on-site "P3335",
+   :significant-person "P3342",
+   :twinning "P537",
+   :category-for-recipients-of-this-award "P2517",
+   :sport-number "P1618",
+   :powerplant "P516",
+   :contributing-factor-of "P1537",
+   :software-version "P348",
+   :SourceForge-project "P2209",
+   :orbit-diagram "P491",
+   :NUTS-code "P605",
+   :has-contributing-factor "P1479",
+   :Metacritic-ID "P1712",
+   :statistical-leader "P3279",
+   :UN-number "P695",
+   :ISO-639-5-code "P1798",
+   :drug-used-for-treatment "P2176",
+   :Sports-Reference-ID "P1447",
+   :radix "P3264",
+   :relegated "P2882",
+   :postal-code "P281",
+   :innervated-by "P3189",
+   :legislative-body "P194",
+   :Léonore-ID "P640",
+   :Federal-Register-Document-Number "P1544",
+   :programmer "P943",
+   :gender-of-a-scientific-name-of-a-genus "P2433",
+   :biological-process "P682",
+   :TEU "P1124",
+   :electric-charge "P2200",
+   :Rotten-Tomatoes-identifier "P1258",
+   :director-of-photography "P344",
+   :destination-point "P1444",
+   :distinctive-jersey "P2912",
+   :wing-configuration "P1654",
+   :content-deliverer "P3274",
+   :Terminologia-Anatomica-98 "P1323",
+   :brand "P1716",
+   :Cell-line-ontology-ID "P2158",
+   :title "P1476",
+   :work-location "P937",
+   :minimum-number-of-players "P1872",
+   :PSS-archi-ID "P1838",
+   :time-of-spacecraft-landing "P620",
+   :bowling-style "P2545",
+   :CN "P1209",
+   :ICD-9 "P493",
+   :ambitus "P2279",
+   :venous-drainage "P2289",
+   :lower-flammable-limit "P2202",
+   :soundtrack-album "P406",
+   :received-signal-type "P1194",
+   :located-next-to-body-of-water "P206",
+   :Wi-Fi "P2848",
+   :identifier-of-Comité-des-travaux-historiques-et-scientifiques "P1961",
+   :redshift "P1090",
+   :Scopus-Author-ID "P1153",
+   :deity-of "P1049",
+   :number-of-victims "P1345",
+   :represented-by "P1875",
+   :Royal-Aero-Club-Aviators-Certificate-ID "P1293",
+   :Georgian-national-system-of-romanization "P2126",
+   :number-of-faces "P1658",
+   :type-of-kinship "P1039",
+   :PubMed-Health "P653",
+   :CPU "P880",
+   :backup-or-reserve-team-or-crew "P3015",
+   :IBNR-identifier "P954",
+   :basin-country "P205",
+   :structural-engineer "P631",
+   :diocese "P708",
+   :volume "P478",
+   :together-with "P1706",
+   :Integrated-Postsecondary-Education-Data-System-identifier "P1771",
+   :typeface-font "P2739",
+   :follower-of "P1775",
+   :KldB-2010-occupation-code "P1021",
+   :astronomical-filter "P1227",
+   :MediaWiki-hooks-used "P2377",
+   :amended-by "P2567",
+   :Desa-code-of-Indonesia "P1588",
+   :metasubclass-of "P2445",
+   :Finnish-MP-ID "P2181",
+   :beats-per-minute "P1725",
+   :academic-minor "P811",
+   :clock-speed "P2149",
+   :official-symbol "P2238",
+   :nomenclatural-status "P1135",
+   :AlgaeBase-URL "P1348",
+   :NARA-catalog-record-ID "P1231",
+   :home-venue "P115",
+   :cause-of-death "P509",
+   :ZooBank-nomenclatural-act "P1746",
+   :location-of-final-assembly "P1071",
+   :IPNI-publication-ID "P2008",
+   :Lagrangian-point "P1145",
+   :DPLA-ID "P760",
+   :ChemSpider-ID "P661",
+   :IUCN-ID "P627",
+   :Spotify-track-ID "P2207",
+   :IMA-Number-broad-sense "P484",
+   :Fauna-Europaea-ID "P1895",
+   :shooting-handedness "P423",
+   :Leadscope-ID "P2083",
+   :ICD-O "P563",
+   :KSH-code "P939",
+   :Wikivoyage-banner "P948",
+   :emergency-phone-number "P2852",
+   :intended-public "P2360",
+   :temporal-range-end "P524",
+   :endangeredlanguages.com-ID "P2192",
+   :offers-view-on "P3173",
+   :has-facility "P912",
+   :BAG-code-for-Dutch-towns "P981",
+   :PEI-Register-of-Historic-Places-identifier "P763",
+   :disjoint-union-of "P2738",
+   :charge "P1595",
+   :author "P50",
+   :life-expectancy "P2250",
+   :substrate-of "P2414",
+   :Universal-Decimal-Classification "P1190",
+   :vessel "P1876",
+   :date-of-official-opening "P1619",
+   :Fossilworks-ID "P842",
+   :Kansallisbiografia-ID "P2180",
+   :top-level-domain "P78",
+   :list-of-works "P1455",
+   :United-States-Navy-aircraft-designation "P847",
+   :departure-transaction "P1643",
+   :Finnish-Ministers-database-ID "P2182",
+   :OKTMO-identifier "P764",
+   :GND-identifier "P227",
+   :MSW-identifier "P959",
+   :Anime-News-Network-manga-ID "P1984",
+   :successful-candidate "P991",
+   :maximum-number-of-players "P1873",
+   :real-gross-domestic-product-growth-rate "P2219",
+   :chapter "P792",
+   :lakes-on-river "P469",
+   :medical-specialty "P1995",
+   :Hornbostel-Sachs-classification "P1762",
+   :LinkedIn-personal-profile "P2035",
+   :interchange-station "P833",
+   :National-Pipe-Organ-Register-identifier "P1763",
+   :currency "P38",
+   :allgame-ID "P907",
+   :general-formula "P1673",
+   :World-Register-of-Marine-Species-identifier "P850",
+   :Open-Hub-ID "P1972",
+   :Wikidata-example-item-value "P1859",
+   :Steam-ID "P1733",
+   :Request-for-Comments-identifier "P892",
+   :CLARA-ID "P1615",
+   :Fide-ID "P1440",
+   :patient-of "P3205",
+   :named-after "P138",
+   :TeX-string "P1993",
+   :GHS-precautionary-statements "P940",
+   :Artsy-artist "P2042",
+   :AUSTLANG-code "P1252",
+   :lake-outflow "P201",
+   :original-spelling "P1353",
+   :recorded-at "P483",
+   :librettist "P87",
+   :RKDimages "P350",
+   :shown-with-features "P1354",
+   :territory-claimed-by "P1336",
+   :Dharma-Drum-Buddhist-College-place-ID "P1188",
+   :is-pollinated-by "P1703",
+   :Sandrart.net-person-ID "P1422",
+   :Alberta-Register-of-Historic-Places-identifier "P759",
+   :field-of-work "P101",
+   :Project-Gutenberg-ebook-ID "P2034",
+   :MoMA-artist-id "P2174",
+   :WOEID "P1281",
+   :match-time-of-score-minutes "P1390",
+   :stage-reached "P2443",
+   :different-from "P1889",
+   :Church-of-Sweden-Pastoratskod "P779",
+   :spouse "P26",
+   :discharge "P2225",
+   :coat-of-arms-image "P94",
+   :sourcing-circumstances "P1480",
+   :World-Heritage-Site-id "P757",
+   :Linguasphere-code "P1396",
+   :LIBRIS-editions "P1182",
+   :electrical-plug-type "P2853",
+   :uglybridges.com-ID "P1380",
+   :MeSH-Code "P672",
+   :Encyclopaedia-Metallum-band-ID "P1952",
+   :ATVK-ID "P1115",
+   :Japanese-High-School-Code "P1386",
+   :general-classification "P2321",
+   :Commonwealth-War-Graves-Commission-burial-ground-identifier "P1920",
+   :main-food-source "P1034",
+   :periapsis "P2244",
+   :heritagefoundation.ca-ID "P933",
+   :ISO-4217-code "P498",
+   :superhuman-feature-or-ability "P2563",
+   :ISFDB-author-ID "P1233",
+   :MeSH-ID "P486",
+   :Flemish-organization-for-Immovable-Heritage-relict-ID "P1764",
+   :size-of-team-at-finish "P2105",
+   :political-alignment "P1387",
+   :host "P2975",
+   :product "P1056",
+   :participating-teams "P1923",
+   :distributor "P750",
+   :total-imports "P2136",
+   :Mérimée-identifier "P380",
+   :canonical-SMILES "P233",
+   :station-code "P296",
+   :singles-record "P564",
+   :forgery-after "P1778",
+   :Flora-of-China-ID "P1747",
+   :boiling-point "P2102",
+   :PDB-ID "P638",
+   :SSR-WrittenForm-ID "P1849",
+   :binding-energy "P2154",
+   :ATCvet "P1668",
+   :league-points-system "P3195",
+   :sister "P9",
+   :Eight-Banner-register "P470",
+   :ex-taxon-author "P697",
+   :number-of-cases "P1603",
+   :Commons-category "P373",
+   :based-on-heuristic "P887",
+   :proxy "P1393",
+   :ortholog "P684",
+   :category-for-films-shot-at-this-location "P1740",
+   :circle-of "P1776",
+   :SCN "P377",
+   :publication-date "P577",
+   :Mapillary-ID "P1947",
+   :NFPA-Health "P993",
+   :isospin-quantum-number "P1126",
+   :list-of-characters "P1881",
+   :list-of-episodes "P1811",
+   :discoverer-or-inventor "P61",
+   :cardinality-of-this-set "P2820",
+   :fictional-analog-of "P1074",
+   :immediate-cause-of "P1536",
+   :Australian-Dictionary-of-Biography-identifier "P1907",
+   :oxidation-state "P1121",
+   :service-retirement "P730",
+   :AllMusic-song-ID "P1730",
+   :International-Standard-Industrial-Classification-code "P1796",
+   :BiblioNet-publisher-identifier "P2189",
+   :Fellow-of-the-Royal-Society "P2070",
+   :Gini-coefficient "P1125",
+   :donated-by "P1028",
+   :EAGLE-id "P1900",
+   :coat-of-arms "P237",
+   :International-Standard-Recording-Code "P1243",
+   :equivalent-property "P1628",
+   :has-natural-reservoir "P1605",
+   :GitHub-username "P2037",
+   :melting-point "P2101",
+   :convicted-of "P1399",
+   :RKD-ESD-identifier-Slovenia "P1715",
+   :record-held "P1000",
+   :BN-Argentine-editions "P1143",
+   :pollenizer "P1704",
+   :Internet-Broadway-Database-show-ID "P1219",
+   :working-title "P1638",
+   :RTECS-number "P657",
+   :licensed-to-broadcast-to "P1408",
+   :asteroid-taxonomy "P1016",
+   :vaccine-for "P1924",
+   :NRHP-reference-number "P649",
+   :corrigendum---erratum "P2507",
+   :mouthpiece "P2813",
+   :total-debt "P2133",
+   :parent-club "P831",
+   :ploidy "P1349",
+   :costume-designer "P2515",
+   :material-used "P186",
+   :Rodovid-ID "P1185",
+   :dantai-code "P429",
+   :located-in-time-zone "P421",
+   :code-Bien-de-Interés-Cultural "P808",
+   :founder "P112",
+   :astronomic-symbol-image "P367",
+   :number-of-missing "P1446",
+   :Find-a-Grave-grave-ID "P535",
+   :Parlement-&-Politiek-ID "P1749",
+   :official-name "P1448",
+   :decays-to "P816",
+   :MoMA-artwork-id "P2014",
+   :official-religion "P3075",
+   :foreign-direct-investment-net-inflows "P2141",
+   :ISO-639-2-code "P219",
+   :AllMovie-movie-ID "P1562",
+   :used-metre "P2551",
+   :Paris-city-digital-code "P630",
+   :qualifier-of-property-constraint "P2305",
+   :central-bank "P1304",
+   :NCBI-Taxonomy-ID "P685",
+   :IDLH "P2129",
+   :DINOloket "P733",
+   :Dictionary-of-Welsh-Biography-ID "P1648",
+   :carries-scientific-instrument "P1202",
+   :cathedral "P1885",
+   :Esperantist-ID "P1601",
+   :SBC-2010-occupation-code "P1023",
+   :defendant "P1591",
+   :Tropicos-taxon-name-identifier "P960",
+   :Nova-Scotia-Register-of-Historic-Places-identifier "P909",
+   :ISIL-ID "P791",
+   :type-locality "P2695",
+   :GeoNames-ID "P1566",
+   :LIPID-MAPS-ID "P2063",
+   :ethnic-group "P172",
+   :original-combination "P1403",
+   :Clinvar-Accession-Number "P1929",
+   :GNIS-Antarctica-ID "P804",
+   :Scopus-Source-ID "P1156",
+   :EUL-editions "P1084",
+   :broadcast-by "P3301",
+   :hair-color "P1884",
+   :valid-in-place "P3005",
+   :Ministry-of-Education-of-Chile-school-ID "P1919",
+   :Orphanet-ID "P1550",
+   :total-produced "P1092",
+   :FundRef-registry-name "P1905",
+   :CBS-municipality-code "P382",
+   :quote "P1683",
+   :CGNDB-Unique-Identifier "P821",
+   :named-as "P1810",
+   :studies "P2578",
+   :attributed-to "P1773",
+   :Vox-ATypI-classification "P1878",
+   :review-score "P444",
+   :located-on-astronomical-body "P376",
+   :contributor "s",
+   :longitude-of-ascending-node "P2213",
+   :IUCN-protected-areas-category "P814",
+   :residence "P551",
+   :user-manual-link "P2078",
+   :author-of-afterword "P2680",
+   :has-pet "P1429",
+   :father "P22",
+   :tempo-marking "P1558",
+   :prevalence "P1193",
+   :language "P2439",
+   :audio-recording-of-the-subjects-spoken-voice "P990",
+   :PMCID "P932",
+   :has-tense "P3103",
+   :guest-of-honor "P967",
+   :number-of-households "P1538",
+   :item-operated "P121",
+   :FAST-ID "P2163",
+   :Dyntaxa-ID "P1939",
+   :parallax "P2214",
+   :mushroom-ecological-type "P788",
+   :VASCAN-ID "P1745",
+   :coordinate-of-easternmost-point "P1334",
+   :facet-of "P1269",
+   :exception-to-constraint "P2303",
+   :NIEA-building-ID "P1460",
+   :coolant "P588",
+   :Dialnet-journal "P1609",
+   :officeholder "P1308",
+   :EINECS-number "P232",
+   :WTA-ID "P597",
+   :mother-house "P612",
+   :deepest-point "P1589",
+   :natural-reservoir-of "P1606",
+   :motto-text "P1451",
+   :composer "P86",
+   :art-director "P3174",
+   :right-to-vote "P2964",
+   :CiNii-book-identifer "P1739",
+   :author-of-foreword "P2679",
+   :ISBN-13 "P212",
+   :pollination "P1703",
+   :second-surname-in-Spanish-name "P1950",
+   :uses "P2283",
+   :spatial-reference-system "P3037",
+   :class "P2308",
+   :street-key "P1945",
+   :operating-system "P306",
+   :BBC-Things-identifer "P1617",
+   :party-chief-representative "P210",
+   :GrassBase-ID "P1832",
+   :Norway-Database-for-Statistics-on-Higher-education-periodical-ID "P1270",
+   :appointed-by "P748",
+   :Exif-make "P2010",
+   :Munzinger-Pop-identifier "P1286",
+   :ADS-bibcode "P819",
+   :SIGIC-person "P2164",
+   :playing-hand "P741",
+   :PolSys-ID "P1980",
+   :patent-number "P1246",
+   :Find-A-Grave-cemetery-ID "P2025",
+   :Internet-Broadway-Database-production-ID "P1218",
+   :premiershiprugby.com-ID "P861",
+   :number-of-elevators "P1301",
+   :proper-motion "P2215",
+   :commemorates "P547",
+   :Zentralblatt-MATH "P894",
+   :format-as-a-regular-expression "P1793",
+   :subtitle "P1680",
+   :feast-day "P841",
+   :LCAuth-identifier "P244",
+   :published-in "P1433",
+   :ChEMBL-ID "P592",
+   :vessel-class "P289",
+   :ISFDB-series-ID "P1235",
+   :type-of-orbit "P522",
+   :type-of-variable-star "P881",
+   :translator "P655",
+   :NLM-Unique-ID "P1055",
+   :population "P1082",
+   :armament "P520",
+   :number-of-spans "P1314",
+   :pet "P1429",
+   :Czech-cultural-heritage-ID "P762",
+   :conifers.org-ID "P1940",
+   :country-of-origin "P495",
+   :AlloCiné-movie-ID "P1265",
+   :external-subproperty "P2236",
+   :Atlas-ID "P1212",
+   :exhibition-history "P608",
+   :number-of-processor-cores "P1141",
+   :ICD-9-CM "P1692",
+   :Discogs-label-ID "P1955",
+   :Répertoire-du-patrimoine-culturel-du-Québec-identifier "P633",
+   :Wikidata-example-monolingual-text "P1864",
+   :property-usage-tracking-category "P2875",
+   :cultural-properties-of-Belarus-reference-number "P632",
+   :opposite-of "P461",
+   :crystal-system "P556",
+   :ICAO-airline-designator "P230",
+   :subsidiaries "P355",
+   :presynaptic-connection "P925",
+   :coincident-with "P1382",
+   :Museofile "P539",
+   :drives-on-the "P1622",
+   :Name-Assigning-Authority-Number "P1870",
+   :JPL-Small-Body-Database-identifier "P716",
+   :British-Museum-person-institution "P1711",
+   :number-confirmed "P1674",
+   :astronaut-mission "P450",
+   :provisional-designation "P490",
+   :flattening "P1102",
+   :EPSG-ID "P1338",
+   :parent-taxon "P171",
+   :luminosity "P2060",
+   :wing-area "P2112",
+   :sex-or-gender "P21",
+   :quantity-symbol "P416",
+   :reason-for-deprecation "P2241",
+   :USK-rating "P914",
+   :structure-replaces "P1398",
+   :Association-Authors-of-Switzerland-ID "P1291",
+   :coordinate-of-westernmost-point "P1335",
+   :KulturNav-id "P1248",
+   :Sikart "P781",
+   :vici.org-ID "P1481",
+   :JSTOR-journal-code "P1230",
+   :HomoloGene-ID "P593",
+   :seal-description "P418",
+   :COSPAR-ID "P247",
+   :latest-date "P1326",
+   :Anime-News-Network-person-ID "P1982",
+   :templates-main-topic "P1423",
+   :Mathematics-Genealogy-Project-identifier "P549",
+   :Catalogus-Professorum-Academiae-Groninganae-id "P2016",
+   :Foursquare-venue-ID "P1968",
+   :Spotify-album-ID "P2205",
+   :NOC-Occupation-Code "P918",
+   :IPNI-ID "P961",
+   :shape "P1419",
+   :PlantList-ID "P1070",
+   :MusicBrainz-instrument-ID "P1330",
+   :closed-on "P3026",
+   :watershed-area "P2053",
+   :distance-from-river-mouth "P2148",
+   :inspired-by "P941",
+   :chief-operating-officer "P1789",
+   :CDB-Chemical-ID "P2072",
+   :EgliseInfo-ID "P1644",
+   :open-period-to "P3028",
+   :short-author-name "P2093",
+   :prize-money "P2121",
+   :MMSI "P587",
+   :FAA-airport-code "P240",
+   :deletion-association-with "P1912",
+   :IMSLP-ID "P839",
+   :Internet-media-type "P1163",
+   :radio-format "P415",
+   :field-of-this-profession "P425",
+   :satellite-bus "P707",
+   :Global-Biodiversity-Information-Facility-ID "P846",
+   :significant-event "P793",
+   :Perlentaucher-ID "P866",
+   :internetmedicin.se-ID "P2074",
+   :length "P2043",
+   :capital-of "P1376",
+   :autoignition-temperature "P2199",
+   :Low-German-Bibliography-and-Biography-ID "P745",
+   :Teuchos-ID "P2018",
+   :ACM-Digital-Library-author-identifier "P864",
+   :arXiv-classification "P820",
+   :MusicBrainz-work-ID "P435",
+   :top-level-internet-domain "P78",
+   :DSM-V "P1930",
+   :Foundational-Model-of-Anatomy-ID "P1402",
+   :NILF-author-id "P2191",
+   :file-extension "P1195",
+   :opponent-during-disputation "P3323",
+   :median-lethal-dose "P2240",
+   :undercarriage "P1637",
+   :honorific-suffix "P1035",
+   :home-world "P1165",
+   :takeoff-and-landing-capability "P1956",
+   :VISS-ID "P761",
+   :handle "P1184",
+   :number-probable "P1675",
+   :editor "P98",
+   :readable-file-format "P1072",
+   :has-dialect "P134",
+   :NFPA-Other "P877",
+   :Finnish-municipality-number "P1203",
+   :OEIS-ID "P829",
+   :SFDb-ID-OBSOLETE "P1413",
+   :hymenium-attachment "P785",
+   :Wikimedia-language-code "P424",
+   :NLP-identifier "P1695",
+   :earliest-date "P1319",
+   :manifestation-of "P1557",
+   :pathogen-transmission-process "P1060",
+   :plaintiff "P1620",
+   :has-anatomical-branch "P3262",
+   :genomic-assembly "P659",
+   :replaced-synonym-for-nom.-nov. "P694",
+   :operator "P137",
+   :UBERON-ID "P1554",
+   :point-group "P589",
+   :list-of-monuments "P1456",
+   :professorship "P803",
+   :GDP-per-capita "P2132",
+   :route-of-administration "P636",
+   :visitors-per-year "P1174",
+   :ITTF-ID "P1364",
+   :student-of "P1066",
+   :measures "P2575",
+   :Brazilian-municipality-code "P1585",
+   :ecoregion-WWF "P1425",
+   :repealed-by "P2568",
+   :retrieved "P813",
+   :Swedish-Film-Database-person-ID "P2168",
+   :Stack-Exchange-tag "P1482",
+   :CONA--identifier "P1669",
+   :TERYT-municipality-code "P1653",
+   :Kunstindex-Danmark-artwork-ID "P2108",
+   :Sandbox-URL "P855",
+   :sidekick-of "P2546",
+   :stated-as "P1932",
+   :Unicode-character "P487",
+   :PubChem-Substance-ID "P2153",
+   :gene-duplication-association-with "P1913",
+   :Wikidata-example-property "P1863",
+   :file-format "P2701",
+   :pKa "P1117",
+   :muscle-action "P3310",
+   :spectral-class "P215",
+   :State-Water-Register-Code-Russia "P884",
+   :has-facet-polytope "P1312",
+   :total-valid-votes "P1697",
+   :IMDb-identifier "P345",
+   :eMedicine "P673",
+   :Deutsche-Ultramarathon-Vereinigung-ID "P2162",
+   :partnership-with "P2652",
+   :Norway-Import-Service-and-Registration-Authority-periodical-code "P1272",
+   :elector "P2319",
+   :game-artist "P3080",
+   :China-railway-TMIS-station-code "P1378",
+   :Hermann–Mauguin-notation "P1632",
+   :language-used "P2936",
+   :ClassInd-rating "P3216",
+   :demonym "P1549",
+   :Glad-identifier "P1529",
+   :BALaT-person-organisation-id "P1901",
+   :guidance-system "P624",
+   :Litholex-ID "P731",
+   :half-life "P2114",
+   :competition-class "P2094",
+   :CAS-registry-number "P231",
+   :monogram "P1543",
+   :Wikidata-example-geographic-coordinates "P1865",
+   :space-tug "P1201",
+   :taxon-name "P225",
+   :ÚSOP-code "P677",
+   :decay-mode "P817",
+   :pseudonym "P742",
+   :manner-of-death "P1196",
+   :geo-datum "P796",
+   :charted-in "P2291",
+   :Roman-agnomen "P2366",
+   :Avibase-ID "P2026",
+   :distribution "P437",
+   :BC-Geographical-Names-ID "P2099",
+   :IUPHAR-ID "P595",
+   :WALS-family-code "P1468",
+   :ranking "P1352",
+   :freedom-of-panorama "P3084",
+   :FishBase-species-identifier "P938",
+   :ISO-3166-1-alpha-2-code "P297",
+   :IOC-country-code "P984",
+   :foundational-text "P457",
+   :Google-Books-identifier "P675",
+   :determination-method "P459",
+   :manufacturer "P176",
+   :Wikidata-example-time "P1861",
+   :companion-of "P399",
+   :EC-number "P591",
+   :Animator.ru-film-ID "P1934",
+   :highest-judicial-authority "P209",
+   :Nickel-Strunz-10th-pending-edition "P713",
+   :referee "P1652",
+   :bureau-du-patrimoine-de-Seine-Saint-Denis-ID "P1794",
+   :imported-from "P143",
+   :Discogs-master-ID "P1954",
+   :InPhO-identifier "P863",
+   :MusicBrainz-artist-ID "P434",
+   :cardinality-of-the-group "P1164",
+   :place-of-death "P20",
+   :date-of-taxon-name-publication "P574",
+   :Mathematical-Reviews-identifier "P889",
+   :unit-symbol "P558",
+   :AllMusic-artist-ID "P1728",
+   :image "P18",
+   :location-of-discovery "P189",
+   :PTBNP-identifier "P1005",
+   :first-flight "P606",
+   :EGAXA-identifier "P1309",
+   :has-index-case "P1660",
+   :occupant "P466",
+   :cleavage "P693",
+   :choreographer "P1809",
+   :reply-to "P2675",
+   :number-of-registered-users-contributors "P1833",
+   :enthalpy-of-vaporization "P2116",
+   :phase-point "P873",
+   :country-of-citizenship "P27",
+   :WDPA-id "P809",
+   :religious-order "P611",
+   :chemical-structure "P117",
+   :orbital-eccentricity "P1096",
+   :GOST-7.75-97-code "P278",
+   :native-label "P1705",
+   :area "P2046",
+   :workshop-of "P1774",
+   :Roman-nomen-gentilicium "P2359",
+   :Nickel-Strunz-9th-edition-updated-2009 "P712",
+   :altered-regulation-leads-to "P1918",
+   :driving-side "P1622",
+   :tourist-office "P2872",
+   :MusicBrainz-place-ID "P1004",
+   :ROME-Occupation-Code-v3 "P867",
+   :ULAN-identifier "P245",
+   :country-calling-code "P474",
+   :has-immediate-cause "P1478",
+   :spin-off "P2512",
+   :Europeana-ID "P727",
+   :Perry-Index "P1852",
+   :molecule-conformation "P3149",
+   :production-company "P272",
+   :OBSOLETE-title-use-P1476-title "P357",
+   :courtesy-name "P1782",
+   :NARA-organization-ID "P1223",
+   :sibling "P3373",
+   :gene-insertion-association-with "P1914",
+   :website-account-on "P553",
+   :tracklist "P658",
+   :average-gradient "P2198",
+   :Spanish-subject-headings-for-public-libraries "P920",
+   :Discogs-release-ID "P2206",
+   :cohabitant "P451",
+   :replaces "P1365",
+   :street-number "P670",
+   :Air-Ministry-specification-ID "P799",
+   :index-case-of "P1677",
+   :cost "P2130",
+   :GRAU-index "P917",
+   :Soccerbase-player-id "P2193",
+   :losses "P1356",
+   :eye-color "P1340",
+   :distribution-map "P1846",
+   :measured-by "P1880",
+   :detail-map "P1621",
+   :lostbridges.org-ID "P1311",
+   :kulturnoe-nasledie.ru-ID "P1483",
+   :Dizionario-Biografico-degli-Italiani "P1986",
+   :spore-print-color "P787",
+   :Sandbox-CommonsMediaFile "P368",
+   :WALS-genus-code "P1467",
+   :track-gauge "P1064",
+   :notation "P913",
+   :input-set "P1851",
+   :ISFDB-publication-ID "P1234",
+   :is-recto-of "P2681",
+   :IATA-airline-designator "P229",
+   :month-of-the-year "P2922",
+   :child "P40",
+   :totem "P2831",
+   :Sächsische-Biografie "P1710",
+   :lymphatic-drainage "P2288",
+   :ISWC "P1827",
+   :Nupill-Literatura-Digital---Author "P1473",
+   :genomic-end "P645",
+   :central-government-debt-as-a-percent-of-GDP "P1689",
+   :edition-or-translation-of "P629",
+   :isospin-z-component "P1127",
+   :has-quality "P1552",
+   :underlies "P567",
+   :CERL-ID "P1871",
+   :Internet-Broadway-Database-venue-ID "P1217",
+   :audio "P51",
+   :properties-for-this-type "P1963",
+   :has-cause "P828",
+   :promoted "P2881",
+   :destroyed "P3082",
+   :is-pollinator-of "P1704",
+   :Cooper-Hewitt-Person-ID "P2011",
+   :game-mode "P404",
+   :points-goal-scored-by "P1363",
+   :Smithsonian-American-Art-Museum--person-institution-thesaurus-id "P1795",
+   :Theatricalia-play-ID "P1242",
+   :total-reserves "P2134",
+   :Dialnet-article "P1610",
+   :Digital-Rights-Management-system "P1032",
+   :gyromagnetic-ratio "P2222",
+   :medical-treatment "P924",
+   :KOATUU-identifier "P1077",
+   :instrumentation "P870",
+   :genome-size "P2143",
+   :RefSeq "P656",
+   :musical-conductor "P3300",
+   :academic-major "P812",
+   :tributary "P974",
+   :Roud-Folk-Song-Index "P1829",
+   :Swiss-municipality-code "P771",
+   :developer "P178",
+   :domain "P1568",
+   :period "P2348",
+   :UIC-station-code "P722",
+   :licence-plate-code "P395",
+   :stability-of-property-value "P2668",
+   :place-of-birth "P19",
+   :godparent "P1290",
+   :antiparticle "P2152",
+   :UNII "P652",
+   :code-for-weekend-and-holiday-homes-Sweden "P980",
+   :target "P533",
+   :number-of-masts "P1099",
+   :Internet-Broadway-Database-person-ID "P1220",
+   :enclosure "P3158",
+   :railway-signalling-system "P3019",
+   :place-of-burial "P119",
+   :magnetic-moment "P2069",
+   :NNDB-people-ID "P1263",
+   :SkyscraperPage-building-id "P1699",
+   :commissioned-by "P88",
+   :applies-to-territorial-jurisdiction "P1001",
+   :minimum-explosive-concentration "P2204",
+   :MEP-directory-identifier "P1186",
+   :production-statistics "P2746",
+   :Slovenska-biografija-ID "P1254",
+   :located-on-terrain-feature "P706",
+   :ERA-Journal-ID "P1058",
+   :University-of-Barcelona-authority-ID "P1580",
+   :given-name-version-for-other-gender "P1560",
+   :MovieMeter-director-ID "P1969",
+   :public-holiday "P832",
+   :LPSN-URL "P1991",
+   :DOI-Prefix "P1662",
+   :proportion "P1107",
+   :by-product "P2821",
+   :quantity "P1114",
+   :EIRIN-film-rating "P2756",
+   :Openpolis-ID "P1229",
+   :spectral-line "P2224",
+   :ICD-10-PCS "P1690",
+   :Jewish-Encyclopedia-ID-Russian "P1438",
+   :depends-on-software "P1547",
+   :Dictionary-of-Ulster-Biography-ID "P2029",
+   :league-level-above "P2499",
+   :PRDL-Author-ID "P1463",
+   :UniProt-ID "P352",
+   :software-engine "P408",
+   :mount "P3091",
+   :point-in-time "P585",
+   :issued-by "P2378",
+   :time-of-spacecraft-launch "P619",
+   :BHL-Page-ID "P687",
+   :employees "P1128",
+   :flower-color "P2827",
+   :league-level-below "P2500",
+   :explosive-energy-equivalent "P2145",
+   :depends-on "P1547",
+   :language-regulatory-body "P1018",
+   :base "P3263",
+   :expected-completeness "P2429",
+   :BCU-Ecrivainsvd "P1253",
+   :C-SPAN-identifier-of-a-person "P2190",
+   :units-used-for-this-property "P2237",
+   :business-division "P199",
+   :substitute-deputy-replacement-of-office-officeholder "P2098",
+   :depicts-Iconclass-notation "P1257",
+   :chief-executive-officer "P169",
+   :INEGI-locality-identifier "P1976",
+   :Cultural-heritage-database-in-Sweden "P1260",
+   :full-text-available-at "P953",
+   :Web-Gallery-of-Art-identifier "P1882",
+   :fossil-found-in-this-unit "P1137",
+   :BnF-identifier "P268",
+   :Nikkaji "P2085",
+   :has-superpartner "P2375",
+   :RefSeq-Protein-ID "P637",
+   :journey-origin "P1427",
+   :name-day "P1750",
+   :Baseball-Reference.com-major-league-player-ID "P1825",
+   :USDA-PLANTS-ID "P1772",
+   :location-of-landing "P1158",
+   :SANDRE-ID "P1717",
+   :territory-overlaps "P3179",
+   :students-count "P2196",
+   :BBC-News-Democracy-Live-identifier "P2173",
+   :GTAA-id "P1741",
+   :FIFA-player-code "P1469",
+   :Exceptional-heritage-of-Wallonia-identifier "P1551",
+   :CNKI "P857",
+   :ITIS-TSN "P815",
+   :DNB-editions "P1292",
+   :Iconclass-notation "P1256",
+   :record-or-record-progression "P2869",
+   :category-of-associated-people "P1792",
+   :enclave-within "P501",
+   :Watson-and-Dallwitz-family-ID "P1761",
+   :Naturbase-ID "P1732",
+   :cause-of "P1542",
+   :sandbox-quantity "P1106",
+   :CELEX-number "P476",
+   :source-of-material "P2647",
+   :INE-municipality-code "P772",
+   :military-casualty-classification "P1347",
+   :category-of-people-buried-here "P1791",
+   :Swedish-Football-Association-ID "P1238",
+   :ticker-symbol "P249",
+   :applies-to-part "P518",
+   :relation "P2309",
+   :writing-system "P282",
+   :side-effect "P1909",
+   :tonality "P826",
+   :Delarge-ID "P1988",
+   :NFPA-Reactivity "P995",
+   :catalog-code "P528",
+   :taxon-author "P405",
+   :e-archiv-li-ID "P860",
+   :codomain "P1571",
+   :IDEO-Job-ID "P1043",
+   :formatter-URL "P1630",
+   :income-classification-Philippines "P1879",
+   :M-sin-i "P2051",
+   :BBF-identifier "P1650",
+   :radial-velocity "P2216",
+   :archives-at "P485",
+   :density "P2054",
+   :direction-relative-to-location "P654",
+   :LIR "P886",
+   :Philippine-Standard-Geographic-Code "P988",
+   :AllMusic-album-ID "P1729",
+   :Elo-rating "P1087",
+   :does-not-have-part "P3113",
+   :Mouse-Genome-Informatics-ID "P671",
+   :term-length-of-office "P2097",
+   :BioStor-author-identifier "P1790",
+   :metallicity "P2227",
+   :ISSN "P236",
+   :DBCS-ID "P1935",
+   :German-municipality-key "P439",
+   :architectural-style "P149",
+   :see-also "P1659",
+   :relief-location-map "P1944",
+   :dedicated-to "P825",
+   :nominee "P2453",
+   :logo-image "P154",
+   :Global-Anabaptist-Mennonite-Encyclopedia-Online-identifier "P1842",
+   :date-of-baptism-in-early-childhood "P1636",
+   :Wikidata-example-string "P1858",
+   :Biografisch-Portaal-number "P651",
+   :Danemark-Job-Code-DISCO-08 "P1069",
+   :Gmelin-number "P1578",
+   :inventory-number "P217",
+   :rotation-period "P2147",
+   :NFPA-Fire "P994",
+   :art-name "P1787",
+   :family-name "P734",
+   :cuisine "P2012",
+   :RAÄ-nummer "P1262",
+   :central-bank-issuer "P562",
+   :Riksdagen-person-id "P1214",
+   :Japanese-military-aircraft-designation "P849",
+   :number-of-survivors "P1561",
+   :ATC-code "P267",
+   :located-in-protected-area "P3018",
+   :location "P276",
+   :of "P642",
+   :military-rank "P410",
+   :wins "P1355",
+   :patron "P1962",
+   :cell-component "P681",
+   :Norway-Database-for-Statistics-on-Higher-education-publisher-ID "P1271",
+   :edition-s "P747",
+   :PACE-member-ID "P1331",
+   :Catalogus-Professorum-Halensis "P2005",
+   :produced-by "P2849",
+   :collection "P195",
+   :used-by "P1535",
+   :TGN-identifier "P1667",
+   :posttranslational-modification-association-with "P1917",
+   :Enciclopédia-Açoriana-ID "P1385",
+   :has-grammatical-case "P2989",
+   :coordinate-of-northernmost-point "P1332",
+   :permanent-duplicated-item "P2959",
+   :Agassiz-et-al-checklist-number "P1744",
+   :applies-to-taxon "P2352",
+   :NSK-identifier "P1375",
+   :NLA-Australia-identifier "P409",
+   :INPN-Code "P1848",
+   :USB-ID "P1167",
+   :dataset-distribution "P2702",
+   :school-of "P1780",
+   :sRGB-color-hex-triplet "P465",
+   :Executive-Order-number "P1555",
+   :designer "P287",
+   :ESPN-SCRUM-ID "P858",
+   :category-for-people-who-died-here "P1465",
+   :LAC-identifier "P1670",
+   :PORT-film-ID "P905",
+   :version-type "P548",
+   :place-served-by-airport "P931",
+   :total-exports "P2135",
+   :AlloCiné-person-ID "P1266",
+   :distance-along "P795",
+   :heritage-status "P1435",
+   :student "P802",
+   :patronym-or-matronym "P2976",
+   :IATA-airport-code "P238",
+   :cause-of-destruction "P770",
+   :German-district-key "P440",
+   :debut-participant "P2318",
+   :history-of-topic "P2184",
+   :nominal-gross-domestic-product "P2131",
+   :speaker "P823",
+   :Scopus-EID "P1154",
+   :space-launch-vehicle "P375",
+   :OMIM-ID "P492",
+   :open-days "P3025",
+   :Kemler-ID "P700",
+   :municipality-code-Denmark "P1168",
+   :DBNL-ID "P723",
+   :NDF-RT-ID "P2115",
+   :Cadw-Building-ID "P1459",
+   :ZooBank-author-ID "P2006",
+   :MobyGames-ID "P1933",
+   :sports-discipline-competed-in "P2416",
+   :ZINC-ID "P2084",
+   :work-period-start "P2031",
+   :HathiTrust-id "P1844",
+   :NIS-INS-code "P1567",
+   :type-of-electrification "P930",
+   :refractive-index "P1109",
+   :Merck-Index-monograph "P1738",
+   :votes-received "P1111",
+   :approved-by "P790",
+   :station-number "P1655",
+   :country "P17",
+   :ESRB-rating "P852",
+   :PSH-ID "P1051",
+   :end-cause "P1534",
+   :genealogics.org-person-ID "P1819",
+   :CITES-Species+-ID "P2040",
+   :ISMN "P1208",
+   :Norsk-filmografi-ID "P1439",
+   :league "P118",
+   :dissolved-or-abolished "P576",
+   :Dictionnaire-du-Jura-ID "P1276",
+   :wingspan "P2050",
+   :sublimation-temperature "P2113",
+   :has-melody "P1625",
+   :Nupill-Literatura-Digital---Document "P1474",
+   :head-of-state "P35",
+   :coordinate-location "P625",
+   :Legal-Entity-Identifier "P1278",
+   :Box-Office-Mojo-film-ID "P1237",
+   :Enciclopedia-de-la-Literatura-en-México-ID "P1565",
+   :Monte-Carlo-Particle-Number "P1360",
+   :Dodis "P701",
+   :Comedien.ch-identifier "P1735",
+   :OBSOLETE-quote-use-P1683 "P387",
+   :Erdős-number "P2021",
+   :intangible-cultural-heritage-status "P3259",
+   :doctoral-advisor "P184",
+   :YouTube-video-identifier "P1651",
+   :SBFI-occupation-code "P1024",
+   :HGNC-ID "P354",
+   :conflict "P607",
+   :image-legend "P2096",
+   :OBSOLETE-influence-of "P738",
+   :Florentine-musea-Inventario-1890--ID "P1726",
+   :medical-condition "P1050",
+   :said-to-be-the-same-as "P460",
+   :based-on "P144",
+   :endemic-to "P183",
+   :conferred-by "P1027",
+   :temperature "P2076",
+   :record-label "P264",
+   :fusion-enthalpy "P2066",
+   :MusicBrainz-label-ID "P966",
+   :German-cattle-breed-ID "P2024",
+   :Maltese-Islands-National-Inventory-of-Cultural-Property-identifier "P1799",
+   :Cycling-Database-ID "P1664",
+   :Parsons-code "P1236",
+   :IMA-status-and-or-rank "P579",
+   :ISFDB-title-ID "P1274",
+   :product-certification "P1389",
+   :nominated-for "P1411",
+   :OKATO-identifier "P721",
+   :Catholic-Hierarchy-person-ID "P1047",
+   :botanist-author-abbreviation "P428",
+   :noble-title "P97",
+   :IUCN-conservation-status "P141",
+   :apparent-magnitude "P1215",
+   :Encyclopaedia-Metallum-artist-ID "P1989",
+   :household-wealth "P2220",
+   :MalaCards-ID "P1583",
+   :Commonwealth-War-Graves-Commission-person-identifier "P1908",
+   :handedness "P552",
+   :direction "P560",
+   :runway "P529",
+   :superpartner-of "P2376",
+   :gross-tonnage "P1093",
+   :unemployment-rate "P1198",
+   :CVR "P1059",
+   :pinyin-transliteration "P1721",
+   :KML-file "P3096",
+   :National-Cancer-Institute-ID "P1395",
+   :patron-saint "P417",
+   :element-symbol "P246",
+   :NATO-reporting-name "P561",
+   :member-of "P463",
+   :German-regional-key "P1388",
+   :Catholic-Hierarchy-diocese-ID "P1866",
+   :number-of-points-goals-scored "P1351",
+   :Great-Aragonese-Encyclopedia-ID "P1807",
+   :catalog "P972",
+   :approximation-algorithm "P1171",
+   :road-number "P1824",
+   :mushroom-cap-shape "P784",
+   :Guthrie-code "P2161",
+   :decay-width "P2223",
+   :inflation-rate "P1279",
+   :SUDOC-authorities "P269",
+   :constraint-status "P2316",
+   :sister-city "P190",
+   :place-name-sign "P1766",
+   :NIST-CODATA-ID "P1645",
+   :supercharger "P1210",
+   :prosecutor "P1592",
+   :category-for-people-born-here "P1464",
+   :religious-name "P1635",
+   :Banque-de-noms-de-lieux-du-Québec-id "P2100",
+   :floors-below-ground "P1139",
+   :relative "P1038",
+   :military-branch "P241",
+   :property-constraint "P2302",
+   :CulturaItalia-ID "P1949",
+   :cites "P2860",
+   :contains-settlement "P1383",
+   :ICPC-2-ID "P667",
+   :located-in-the-administrative-territorial-entity "P131",
+   :UN-packaging-group "P876",
+   :Kunstindeks-Danmark-Artist-ID "P1138",
+   :ICD-10 "P494",
+   :fictional-universe-described-in "P1445",
+   :OpenStreetMap-Relation-identifier "P402",
+   :GenLoc-assembly "P659",
+   :FIPS-55-3-locations-in-the-US "P774",
+   :performer "P175",
+   :OCLC-control-number "P243",
+   :Swedish-minor-urban-area-code "P776",
+   :contains-administrative-territorial-entity "P150",
+   :organizer "P664",
+   :located-on-street "P669",
+   :positive-diagnostic-predictor "P3356",
+   :repeals "P3148",
+   :platform "P400",
+   :physically-interacts-with "P129",
+   :domain-of-saint-or-deity "P2925",
+   :Dutch-Senate-person-ID "P1959",
+   :volume-for-quantity "P2234",
+   :present-in-work "P1441",
+   :has-part "P527",
+   :phone-number-URL "P1244",
+   :range "P2073",
+   :M.49-code "P2082",
+   :height "P2048",
+   :filmography "P1283",
+   :statement-describes "P2384",
+   :section-verse-or-paragraph "P958",
+   :aircraft-registration "P426",
+   :Regensburg-Classification "P1150",
+   :Discogs-artist-ID "P1953",
+   :MedlinePlus-ID "P604",
+   :number-of-points-goals-conceded "P1359",
+   :participant-of "P1344",
+   :DSM-IV "P663",
+   :ISIN "P946",
+   :Librivox-author-ID "P1899",
+   :lesarchivesduspectacle-ID "P1977",
+   :EC-classification "P660",
+   :asteroid-family "P744",
+   :possible-creator "P1779",
+   :of-this-hybrid "P1531",
+   :arXiv-ID "P818",
+   :sponsor "P859",
+   :CNC-film-rating "P2758",
+   :number-of-cylinders "P1100",
+   :currency-symbol-description "P489",
+   :defender "P1593",
+   :film-editor "P1040",
+   :PEGI-rating "P908",
+   :semi-major-axis "P2233",
+   :Hansard-currents-session-identifier "P2170",
+   :airline-hub "P113",
+   :neurological-function "P970",
+   :has-vertex-figure "P1678",
+   :dipole-moment "P2201",
+   :ISO-639-1-code "P218",
+   :People-Australia-identifier "P1315",
+   :has-as-part "P527",
+   :electrical-conductivity "P2055",
+   :website-username "P554",
+   :male-population "P1540",
+   :criterion-used "P1013",
+   :Lattes-Platform-number "P1007",
+   :Chess-Games-ID "P1665",
+   :office-held-by-head-of-government "P1313",
+   :carries "P2505",
+   :daily-ridership "P1373",
+   :AllMovie-artist-ID "P2019",
+   :model "P2634",
+   :GeneReviews-ID "P668",
+   :fuel-system "P1211",
+   :commemorative-plaque-image "P1801",
+   :negative-prognostic-predictor "P3359",
+   :lyrics-by "P676",
+   :volcanic-explosivity-index "P1903",
+   :Smithsonian-volcano-identifier "P1886",
+   :deprecated-in-version "P2379",
+   :character-role "P453",
+   :KNApSAcK-ID "P2064",
+   :results "P2501"})
