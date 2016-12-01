@@ -93,6 +93,7 @@
                                           " SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\" . }\n"
                                           "}")
                     (= :order-by token) "\nORDER BY "
+                    (= :group-by token) "\nGROUP BY "
                     (= :limit token) "\nLIMIT "
                     (string? token) (str "\"" token "\"")
                     (vector? token) (str (stringify-query token) " .\n")
@@ -101,6 +102,11 @@
                                     entity (entity (second token))
                                     desc   (str "DESC(" (second token) ")")
                                     asc    (str "ASC(" (second token) ")")
+                                    count  (str "(COUNT("
+                                                (second token)
+                                                ") AS "
+                                                (last token)
+                                                ")")
                                     "UNKNOWN OPERATOR ERROR")
                     :else (str " " token " "))))
       out)))

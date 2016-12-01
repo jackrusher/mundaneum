@@ -122,3 +122,21 @@
 ;;  "Napoleon" ["Napoleon's theorem"],
 ;;  "Abd al-Rahman al-Sufi" ["Brocchi's Cluster"]}
 ;; ...
+
+;; eye color popularity, grouping and counting as part of the query
+(query
+ '[:find ?eyeColorLabel (count ?person :as ?count)
+   :where [[?person (prop :eye-color) ?eyeColor] ]
+   :group-by ?eyeColorLabel])
+;;=>
+;; #{{:eyeColorLabel "yellow", :count "29"} {:eyeColorLabel "red", :count "12"}
+;;   {:eyeColorLabel "black", :count "145"}
+;;   {:eyeColorLabel "purple", :count "1"}
+;;   {:eyeColorLabel "blue-green", :count "19"}
+;;   {:eyeColorLabel "brown", :count "300"}
+;;   {:eyeColorLabel "blue", :count "342"}
+;;   {:eyeColorLabel "hazel", :count "75"}
+;;   {:eyeColorLabel "green", :count "216"}
+;;   {:eyeColorLabel "dark brown", :count "94"}
+;;   {:eyeColorLabel "amber", :count "13"} {:eyeColorLabel "grey", :count "11"}}
+
