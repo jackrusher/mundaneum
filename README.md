@@ -39,7 +39,7 @@ In the meantime, it can at least answer questions like:
 ;;   {:work "Q6507", :workLabel "Finnegans Wake"}} 
 ```
 
-Enjoy!
+The `mundaneum.core` namespace is all examples. Enjoy!
 
 ## License
 
