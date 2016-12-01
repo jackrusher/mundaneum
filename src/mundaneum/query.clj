@@ -1,6 +1,7 @@
 (ns mundaneum.query
   (:require [clj-time.core        :as ct]
             [clj-time.format      :as cf]
+            [backtick             :refer [template]]
             [mundaneum.document   :refer [entity-document-by-title
                                           get-document-id]]
             [mundaneum.properties :refer [properties]]))
@@ -51,26 +52,8 @@
        (clojurize-results)
        (into #{})))
 
-(def entity
-  "This is a helper function that tries to guess the right WikiData entity ID from a string resembling that entity's `label`. This is harder than it sounds, and this will sometimes return the wrong version of 'human' or 'person' to do you any good in a query. There is endless room for improvement in the heuristic here employed."
-  (memoize   
-   (fn [label]
-     (if-let [doc (entity-document-by-title label)] ; exact title match? go with it.
-       (str " wd:" (get-document-id doc))
-       ;; no match? find things with that label, filter to entities, take the first 😹
-       (->> (do-query wikidata
-                   (str "SELECT ?item WHERE { ?item rdfs:label \""
-                        label
-                        "\"@en. } LIMIT 10"))
-            (map :item)
-            (filter #(re-find #"^Q[0-9]*$" %))
-            first
-            (str " wd:"))))))
-
-(defn prop
-  "Helper function to look up one of the pre-spidered properties by keyword `p`."
-  [p]
-  (str " wdt:" (first (get mundaneum.properties/properties p))))
+(declare entity)
+(declare prop)
 
 (defn stringify-query
   "Naive conversion of datastructure `q` to a SPARQL query string... fragile af."
@@ -104,8 +87,10 @@
                     (string? token) (str "\"" token "\"")
                     (vector? token) (str (stringify-query token) " .\n")
                     (list? token) (case (first token)
+                                    ;; XXX super gross!
+                                    clojure.core/deref (str "@" (second token))
                                     prop   (prop (second token))
-                                    entity (entity (second token))
+                                    entity (apply entity (rest token))
                                     desc   (str "DESC(" (second token) ")")
                                     asc    (str "ASC(" (second token) ")")
                                     count  (str "(COUNT("
@@ -121,3 +106,33 @@
 
 (defn query [q]
   (do-query wikidata (stringify-query q)))
+
+(defn prop
+  "Helper function to look up one of the pre-spidered properties by keyword `p`."
+  [p]
+  (str " wdt:" (first (get mundaneum.properties/properties p))))
+
+(def entity
+  "This is a helper function that tries to guess the right WikiData entity ID from a string resembling that entity's `label`. This is harder than it sounds, and this will sometimes return the wrong version of 'human' or 'person' to do you any good in a query. There is endless room for improvement in the heuristic here employed."
+  (memoize   
+   (fn [label & criteria]
+     (->> (query (template
+                  [:find ?item
+                   :where [[?item rdfs:label ~label@en]
+                           ~@(mapv (fn [[p e]]
+                                     (template
+                                      [?item
+                                       ~(symbol (prop p))
+                                       ~(symbol (entity e))]))
+                                   (partition 2 criteria))]
+                   :limit 10]))
+          (map :item)
+          (filter #(re-find #"^Q[0-9]*$" %))
+          first
+          (str " wd:")))))
+
+     ;; ;; exact title match? go with it.
+     ;; (if-let [doc (entity-document-by-title label)] 
+     ;;   (str " wd:" (get-document-id doc))
+     ;;   ;; no match? find things with that label, filter to entities, take the first 😹
+     ;;   )

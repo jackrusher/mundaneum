@@ -1,5 +1,6 @@
 (ns mundaneum.core
   (:require [mundaneum.document :as d]
+            [backtick             :refer [template]]
             [mundaneum.query    :refer [query entity prop]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -140,7 +141,7 @@
 ;;   {:eyeColorLabel "dark brown", :count "94"}
 ;;   {:eyeColorLabel "amber", :count "13"} {:eyeColorLabel "grey", :count "11"}}
 
-;; airports within 20km of Paris
+;; airports within 20km of Paris, use "around" service
 (query
  '[:find ?place ?placeLabel ?location
    :where [[(entity "Paris") (prop :coordinate-location) ?parisLoc]
@@ -172,3 +173,36 @@
 ;;   {:place "Q2875445",
 ;;    :location "Point(2.6075 48.897778)",
 ;;    :placeLabel "Chelles Le Pin Airport"}}
+
+;; U1 stations in Berlin w/ geo coords
+(query
+ '[:find ?stationLabel ?coord
+   :where [[?station
+            (prop :connecting-line)
+            (entity "U1" :part-of "Berlin U-Bahn") \;
+            (prop :coordinate-location) ?coord]]])
+;;=>
+;; #{{:coord "Point(13.382777777 52.499166666)",
+;;    :stationLabel "Möckernbrücke"}
+;;   {:coord "Point(13.343055555 52.501944444)",
+;;    :stationLabel "Wittenbergplatz"}
+;;   {:coord "Point(13.332777777 52.504166666)",
+;;    :stationLabel "Kurfürstendamm"}
+;;   {:coord "Point(13.361944444 52.5)",
+;;    :stationLabel "Kurfürstenstraße"}
+;;   {:coord "Point(13.325555555 52.5025)", :stationLabel "Uhlandstraße"}
+;;   {:coord "Point(13.441666666 52.500833333)",
+;;    :stationLabel "Schlesisches Tor"}
+;;   {:coord "Point(13.353888888 52.499166666)",
+;;    :stationLabel "Nollendorfplatz"}
+;;   {:coord "Point(13.375277777 52.498333333)",
+;;    :stationLabel "Gleisdreieck"}
+;;   {:coord "Point(13.428 52.4992)", :stationLabel "Görlitzer Bahnhof"}
+;;   {:coord "Point(13.406111111 52.498333333)",
+;;    :stationLabel "Prinzenstraße"}
+;;   {:coord "Point(13.391111111 52.497777777)",
+;;    :stationLabel "Hallesches Tor"}
+;;   {:coord "Point(13.418055555 52.499166666)",
+;;    :stationLabel "Kottbusser Tor"}
+;;   {:coord "Point(13.449047222 52.505083333)",
+;;    :stationLabel "Warschauer Straße subway station"}}
