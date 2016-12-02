@@ -59,7 +59,7 @@ environment. The approach I took was:
 
 ``` clojure
 (prop :author)
-;;=> "wdt:P50"
+;;=> "P50"
 ```
 
 * create a helper function that tries to correctly guess the id of an
@@ -68,14 +68,14 @@ environment. The approach I took was:
 
 ``` clojure
 (entity "James Joyce")
-;;=> "wd:Q6882"
+;;=> "Q6882"
 
 ;; also supports additional criteria to help find the right entity:
 (entity "U1")
-;;=> "wd:Q2472052", which is a Wikipedia disambiguation page
+;;=> "Q2472052", which is a Wikipedia disambiguation page
 
 (entity "U1" :part-of "Berlin U-Bahn")
-;;=> "wd:Q99691", which is U-1 line that runs north of my flat
+;;=> "Q99691", which is U-1 line that runs north of my flat
 ```
 
 This already helps to keep my emacs-driven process running
