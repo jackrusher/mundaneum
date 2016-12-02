@@ -10,7 +10,7 @@ wonderful c. 1910 vision for something like the World Wide Web.
 (There's a mini-doc about him and it
 [here](https://www.youtube.com/watch?v=hSyfZkVgasI).)
 
-### Motivation ###
+## Motivation
 
 Wikidata is amazing! And it provides API access to all the knowledge
 it has collected! This is great, but exploratory programmatic access
@@ -34,7 +34,7 @@ For example, to get a selection of works authored by James Joyce,
 one would issue a query like:
 
 ``` sparql
-SELECT ?work ?workLabel
+SELECT ?work
 WHERE { ?work wdt:P50 wd:Q6882. } 
 LIMIT 10
 ```
@@ -85,7 +85,7 @@ similar to the one offered by Datomic. This looks like:
 
 ``` clojure
 ;; what are some works authored by James Joyce?
-(query '[:find ?work ?workLabel
+(query '[:select ?work ?workLabel
          :where [[?work (prop :author) (entity "James Joyce")]]
          :limit 10])
 ;; #{{:work "Q864141", :workLabel "Eveline"}

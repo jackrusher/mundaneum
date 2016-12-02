@@ -52,8 +52,21 @@
        (clojurize-results)
        (into #{})))
 
+(defn property
+  "Helper function to look up one of the pre-spidered properties by keyword `p`."
+  [p]
+  (get mundaneum.properties/properties p))
+
+(defn prop [p]
+  (str " wdt:" (property p)))
+
+(defn statement [p]
+  (str " ps:" (get mundaneum.properties/properties p)))
+
+(defn qualifier [p]
+  (str " pq:" (get mundaneum.properties/properties p)))
+
 (declare entity)
-(declare prop)
 
 (defn stringify-query
   "Naive conversion of datastructure `q` to a SPARQL query string... fragile af."
@@ -67,7 +80,7 @@
                (rest q))
              (str out
                   (cond
-                    (= :find token) "SELECT "
+                    (= :select token) "SELECT "
                     (= :filter token) (str " FILTER ("
                                            (stringify-query (first (rest q)))
                                            ")\n")
@@ -90,6 +103,8 @@
                                     ;; XXX super gross!
                                     clojure.core/deref (str "@" (second token))
                                     prop   (prop (second token))
+                                    qualifier (qualifier (second token))
+                                    statement (statement (second token))
                                     entity (apply entity (rest token))
                                     desc   (str "DESC(" (second token) ")")
                                     asc    (str "ASC(" (second token) ")")
@@ -107,14 +122,9 @@
 (defn query [q]
   (do-query wikidata (stringify-query q)))
 
-(defn prop
-  "Helper function to look up one of the pre-spidered properties by keyword `p`."
-  [p]
-  (str " wdt:" (get mundaneum.properties/properties p)))
-
 (defn query-for-entity [label criteria]
   (->> (query (template
-               [:find ?item
+               [:select ?item
                 :where [[?item rdfs:label ~label@en]
                         ~@(mapv (fn [[p e]]
                                   (template
@@ -129,7 +139,7 @@
        (str " wd:")))
 
 (def entity
-  "Returns a guess at the WikiData entity ID from a string resembling that entity's `label`. One can specity `criteria` in the form of :propery value pairs that will be used to narrow in on the right entity."
+  "Returns a guess at the WikiData entity ID from a string resembling that entity's `label`. One can specity `criteria` in the form of :propery/entity pairs to help select the right entity."
   (memoize   
    (fn [label & criteria]
      (if (empty? criteria)

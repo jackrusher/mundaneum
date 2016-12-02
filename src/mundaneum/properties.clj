@@ -3,7 +3,7 @@
 ;; from http://quarry.wmflabs.org/run/45013/output/1/json
 ;;
 ;; (reduce
-;;  #(assoc %1 (keyword (clojure.string/replace (clojure.string/replace (second %2) #"[ /]" "-") #"[\(\)\']" "")) (first %2))
+;;  #(assoc %1 (keyword (clojure.string/replace (clojure.string/replace (second %2) #"[ /]" "-") #"[\(\)\'\,]" "")) (first %2))
 ;;  {}
 ;;  ((clojure.edn/read-string
 ;;    (clojure.string/replace
