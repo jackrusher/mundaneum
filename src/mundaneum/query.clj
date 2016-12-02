@@ -2,10 +2,11 @@
   (:require [clj-time.core        :as ct]
             [clj-time.format      :as cf]
             [backtick             :refer [template]]
-            [mundaneum.document   :refer [entity-document-by-title
-                                          get-document-id]]
+            [mundaneum.document   :refer [entity-document-by-title document-id]]
             [mundaneum.properties :refer [properties]]))
 
+;; Need to make it easy to specify these:
+;;
 ;; PREFIX wd: <http://www.wikidata.org/entity/>
 ;; PREFIX wds: <http://www.wikidata.org/entity/statement/>
 ;; PREFIX wdt: <http://www.wikidata.org/prop/direct/>
@@ -61,10 +62,10 @@
   (str " wdt:" (property p)))
 
 (defn statement [p]
-  (str " ps:" (get mundaneum.properties/properties p)))
+  (str " ps:" (property p)))
 
 (defn qualifier [p]
-  (str " pq:" (get mundaneum.properties/properties p)))
+  (str " pq:" (property p)))
 
 (declare entity)
 
@@ -105,7 +106,7 @@
                                     prop   (prop (second token))
                                     qualifier (qualifier (second token))
                                     statement (statement (second token))
-                                    entity (apply entity (rest token))
+                                    entity (str " wd:" (apply entity (rest token)))
                                     desc   (str "DESC(" (second token) ")")
                                     asc    (str "ASC(" (second token) ")")
                                     count  (str "(COUNT("
@@ -113,39 +114,39 @@
                                                 ") AS "
                                                 (last token)
                                                 ")")
-                                    "UNKNOWN OPERATOR ERROR")
+                                    (throw (Exception. "unknown operator in SPARQL DSL")))
                     :else (str " " token " "))))
       out)))
 ;; TODO add parametric language choices!
 ;; bd:serviceParam wikibase:language \"en,fr,de,he,el,fi,no,ja\" .
 
-(defn query [q]
+(defn query
+  "Perform the query specified in `q` against the Wikidata SPARQL endpoint."
+  [q]
   (do-query wikidata (stringify-query q)))
 
 (defn query-for-entity [label criteria]
-  (->> (query (template
-               [:select ?item
-                :where [[?item rdfs:label ~label@en]
-                        ~@(mapv (fn [[p e]]
-                                  (template
-                                   [?item
-                                    ~(symbol (prop p))
-                                    ~(symbol (entity e))]))
-                                (partition 2 criteria))]
-                :limit 10]))
+  (->> (query (template [:select ?item
+                         :where [[?item rdfs:label ~label@en]
+                                 ~@(mapv (fn [[p e]]
+                                           (template
+                                            [?item
+                                             ~(symbol (prop p))
+                                             ~(symbol (str "wd:" (entity e)))]))
+                                         (partition 2 criteria))]
+                         :limit 10]))
        (map :item)
-       (filter #(re-find #"^Q[0-9]*$" %))
-       first
-       (str " wd:")))
+       (filter #(re-find #"^Q[0-9]*$" %)) ;; ugh
+       first))
 
 (def entity
-  "Returns a guess at the WikiData entity ID from a string resembling that entity's `label`. One can specity `criteria` in the form of :propery/entity pairs to help select the right entity."
+  "Returns a WikiData entity whose entity's label resembles `label`. One can specity `criteria` in the form of :property/entity pairs to help select the right entity."
   (memoize   
    (fn [label & criteria]
      (if (empty? criteria)
        ;; no criteria and an exact title match? go with it.
        (if-let [doc (entity-document-by-title label)] 
-         (str " wd:" (get-document-id doc))
+         (document-id doc)
          (query-for-entity label criteria))
        (query-for-entity label criteria)))))
 

@@ -1,17 +1,27 @@
 (ns mundaneum.core
   (:require [mundaneum.document :as d]
-            [mundaneum.query :refer [query entity prop statement qualifier]]))
+            [mundaneum.query :refer [query entity prop
+                                     statement qualifier
+                                     property]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WIKIDATA API (pretty rough to use for anything interesting)
 
-(->> (d/get-entity-document "Q76")  ;; Barack Obama
+(->> (d/entity-document "Q76")  ;; Barack Obama
      (d/find-statement-group "P39") ;; position(s) held
      (d/find-statement "Q11696")    ;; POTUS
      (d/find-claim "P1365")         ;; "replaces"
-     d/get-value-id                 ;; => "Q207"
-     d/get-entity-document
-     d/get-label)
+     d/value-id                 ;; => "Q207"
+     d/id->label)
+;;=> "George W. Bush"
+
+;; easier with helper functions
+(->> (d/entity-document (entity "Barack Obama"))
+     (d/find-statement-group (property :position-held))
+     (d/find-statement (entity "President of the United States of America"))
+     (d/find-claim (property :replaces))
+     d/value-id    ;=> "Q207"
+     d/id->label)
 ;;=> "George W. Bush"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -202,7 +212,6 @@
 ;;    :stationLabel "Kottbusser Tor"}
 ;;   {:coord "Point(13.449047222 52.505083333)",
 ;;    :stationLabel "Warschauer Straße subway station"}}
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
