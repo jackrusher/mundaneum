@@ -76,6 +76,7 @@
     (if-let [token (first q)]
       (recur (case token
                :where   (drop 2 q)
+               :union   (drop 2 q)
                :filter  (drop 2 q)
                :service (drop 3 q)
                (rest q))
@@ -90,6 +91,11 @@
                                           ;; always bring in the label service
                                           " SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\" . }\n"
                                           "}")
+                    (= :union token) (str " { "
+                                          (apply str
+                                                 (interpose " } UNION { "
+                                                            (map stringify-query (first (rest q)))))
+                                          "}\n")
                     (= :service token) (str "\nSERVICE "
                                             (first (rest q))
                                             " {\n"

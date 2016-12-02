@@ -213,6 +213,24 @@
 ;;   {:coord "Point(13.449047222 52.505083333)",
 ;;    :stationLabel "Warschauer Straße subway station"}}
 
+;; born in Scotland or territories thereof
+(query
+ '[:select ?item ?itemLabel ?dob
+   :where [:union [[?item (prop :place-of-birth) (entity "Scotland")]
+                   [[?item (prop :place-of-birth) ?pob]
+                    [?pob (prop :located-in-the-administrative-territorial-entity) * (entity "Scotland")]]]]
+   :limit 10])
+;; #{{:item "Q110974", :itemLabel "James Black"}
+;;   {:item "Q45864", :itemLabel "John McAfee"}
+;;   {:item "Q8755", :itemLabel "Colin Maclaurin"}
+;;   {:item "Q90317", :itemLabel "Iain Dilthey"}
+;;   {:item "Q122479", :itemLabel "Malcolm IV of Scotland"}
+;;   {:item "Q68508", :itemLabel "Malcolm III of Scotland"}
+;;   {:item "Q81960", :itemLabel "Robert Burns"}
+;;   {:item "Q26326", :itemLabel "Duncan I of Scotland"}
+;;   {:item "Q132399", :itemLabel "James Inglis"}
+;;   {:item "Q172832", :itemLabel "David Coulthard"}}
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; TODO better blank node handling, graceful way to distinguish
