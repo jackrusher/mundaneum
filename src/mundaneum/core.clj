@@ -1,46 +1,66 @@
 (ns mundaneum.core
   (:require [mundaneum.document :as d]
-            [mundaneum.query :refer [query entity prop
-                                     statement qualifier
-                                     property]]))
+            [mundaneum.query    :refer [query entity prop statement qualifier
+                                        property]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WIKIDATA API (pretty rough to use for anything interesting)
 
 (->> (d/entity-document "Q76")  ;; Barack Obama
-     (d/find-statement-group "P39") ;; position(s) held
-     (d/find-statement "Q11696")    ;; POTUS
-     (d/find-claim "P1365")         ;; "replaces"
+     (d/statement-group-by-id "P39") ;; position(s) held
+     (d/statement-by-id "Q11696")    ;; POTUS
+     (d/claim-by-id "P1365")         ;; "replaces"
      d/value-id                 ;; => "Q207"
      d/id->label)
 ;;=> "George W. Bush"
 
 ;; easier with helper functions
 (->> (d/entity-document (entity "Barack Obama"))
-     (d/find-statement-group (property :position-held))
-     (d/find-statement (entity "President of the United States of America"))
-     (d/find-claim (property :replaces))
+     (d/statement-group-by-id (property :position-held))
+     (d/statement-by-id (entity "President of the United States of America"))
+     (d/claim-by-id (property :replaces))
      d/value-id    ;=> "Q207"
      d/id->label)
 ;;=> "George W. Bush"
 
+;; It's also nice to be able to test whether the entity that you've
+;; requested is the one you expected, like so:
+
+(d/describe (entity "Barack Obama"))
+;;"44th President of the United States of America"
+
+;; ... and if it isn't, you can refine the request by adding extra
+;; criteria to your call to entity:
+
+(d/describe (entity "U1"))
+;;=> "Wikipedia disambiguation page"
+
+(d/describe (entity "U1" :part-of "Berlin U-Bahn"))
+;;=> "rapid transit line in Berlin, Germany"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUERY
 
-;; what are some works authored by James Joyce?
-(query '[:select ?work ?workLabel
-         :where [[?work (prop :author) (entity "James Joyce")]]
-         :limit 10])
-;; #{{:work "Q864141", :workLabel "Eveline"}
-;;   {:work "Q861185", :workLabel "A Little Cloud"}
-;;   {:work "Q459592", :workLabel "Dubliners"}
-;;   {:work "Q682681", :workLabel "Giacomo Joyce"}
-;;   {:work "Q764318", :workLabel "Two Gallants"}
-;;   {:work "Q429967", :workLabel "Chamber Music"}
-;;   {:work "Q465360", :workLabel "A Portrait of the Artist as a Young Man"}
-;;   {:work "Q6511", :workLabel "Ulysses"}
-;;   {:work "Q866956", :workLabel "An Encounter"}
-;;   {:work "Q6507", :workLabel "Finnegans Wake"}} 
+;; the same question about presidential precedence posed in SPARQL,
+;; which is actually a little complicated:
+(query
+ '[:select ?prevLabel
+   :where [[(entity "Barack Obama") (p :position-held) ?pos]
+           [?pos (statement :position-held) (entity "President of the United States of America")
+            _ (qualifier :replaces) ?prev]]])
+;;=>#{{:prevLabel "George W. Bush"}}
+
+;; which can be trivially expanded to list all US presidents and their
+;; predecessors
+(query
+ '[:select ?prezLabel ?prevLabel
+   :where [[?prez (p :position-held) ?pos]
+           [?pos (statement :position-held) (entity "President of the United States of America")
+            _ (qualifier :replaces) ?prev]]])
+;;=>#{{:prezLabel "John Tyler", :prevLabel "William Henry Harrison"}
+;;    {:prezLabel "Gerald Ford", :prevLabel "Richard Nixon"}
+;;    {:prezLabel "John Adams", :prevLabel "George Washington"}
+;; ...  
 
 ;; the parts of various countries, ignoring Canada (sorry, Canada)
 (query
@@ -65,10 +85,13 @@
 ;;   }
 
 ;; the only people to win both an academy award and a nobel prize
+;;
+;; (note the _, which translates to SPARQL's ; which means "use the
+;; same subject as before")
 (query
  '[:select ?pLabel
-   :where [[?p (prop :award-received) / (prop :subclass-of) * (entity "Nobel Prize")]
-           [?p (prop :award-received) / (prop :subclass-of) * (entity "Academy Awards")]]])
+   :where [[?p (prop :award-received) / (prop :subclass-of) * (entity "Nobel Prize")
+            _ (prop :award-received) / (prop :subclass-of) * (entity "Academy Awards")]]])
 ;;=> #{{:pLabel "Bob Dylan"} {:pLabel "George Bernard Shaw"}}
 
 ;; notable murders of the ancient world, with date and location
@@ -109,14 +132,14 @@
 ;; discoveries/inventions grouped by person on the clojure side,
 ;; uncomment the second part of the :where clause to specify only
 ;; female inventor/discovers (you'll need to increase the limit, as
-;; there appear to be many highly productive lady astronomers
+;; there appear to be many highly productive lady astronomers)
 (->> (query
-      '[:select ?whoLabel ?thingLabel
-        :where [[?thing (prop :discoverer-or-inventor) ?who]
+      '[:select ?thingLabel ?whomLabel
+        :where [[?thing (prop :discoverer-or-inventor) ?whom]
                 ;;[?who (prop :sex-or-gender) (entity "female")]
                 ]
         :limit 100])
- (group-by :whoLabel)
+ (group-by :whomLabel)
  (reduce #(assoc %1 (first %2) (mapv :thingLabel (second %2))) {}))
 ;;=>
 ;; {"The Guardian" ["Panama Papers"],
@@ -183,10 +206,8 @@
 ;; U1 stations in Berlin w/ geo coords
 (query
  '[:select ?stationLabel ?coord
-   :where [[?station
-            (prop :connecting-line)
-            (entity "U1" :part-of "Berlin U-Bahn") \;
-            (prop :coordinate-location) ?coord]]])
+   :where [[?station (prop :connecting-line) (entity "U1" :part-of "Berlin U-Bahn")
+            _ (prop :coordinate-location) ?coord]]])
 ;;=>
 ;; #{{:coord "Point(13.382777777 52.499166666)",
 ;;    :stationLabel "Möckernbrücke"}
@@ -215,7 +236,7 @@
 
 ;; born in Scotland or territories thereof
 (query
- '[:select ?item ?itemLabel ?dob
+ '[:select ?itemLabel ?pobLabel
    :where [:union [[?item (prop :place-of-birth) (entity "Scotland")]
                    [[?item (prop :place-of-birth) ?pob]
                     [?pob (prop :located-in-the-administrative-territorial-entity) * (entity "Scotland")]]]]
@@ -233,25 +254,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO better blank node handling, graceful way to distinguish
-;; between direct property wdt:Pxxx and regular property p:Pxxx nodes.
+;; TODO distinct
+;; TODO OPTIONAL
+;; TODO BIND
 
-;; (mundaneum.query/stringify-query ; query
-;;  '[:select ?predLabel
-;;    :where [[(entity "Barack Obama")
-;;             (prop :position-held)
-;;             \[
-;;             (statement :position-held)
-;;             (entity "President of the United States of America")
-;;             \;
-;;             (qualifier :replaces)
-;;             ?pred \]]]])
+;; TODO ASK and DESCRIBE
 
-;; ... is correct but for wdt:P39 in place of p:P39 in the output:
+;; TODO blank nodes, something like:
 ;;
-;; SELECT ?whomLabel
-;; WHERE {
-;;   wd:Q76 p:P39 [ps:P39 wd:Q11696; pq:P1365 ?whom].
-;;   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-;; }
-;; LIMIT 10
+;; ?film movie:actor [ a movie:actor ;
+;;                     movie:actor_name ?actorName ].

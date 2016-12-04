@@ -24,16 +24,20 @@
           "https://query.wikidata.org/sparql")
      (.initialize))))
 
-(defn clojurize-value [v]
-  (let [vc (class v)]
-    (cond (= vc org.eclipse.rdf4j.model.impl.SimpleBNode) nil
-          (= vc org.eclipse.rdf4j.model.impl.SimpleIRI)  (.getLocalName v)
-          (= vc org.eclipse.rdf4j.model.impl.SimpleLiteral)
-          (if (= (.toString (.getDatatype v))
-                 "http://www.w3.org/2001/XMLSchema#dateTime")
-            (cf/parse (.getLabel v))
-            (.getLabel v))
-          :else [(class v) (.toString v)])))
+(defprotocol Clojurizable
+  (clojurize-value [this] (vector (class v) (.toString v))))
+
+(extend-protocol Clojurizable
+  org.eclipse.rdf4j.model.impl.SimpleBNode
+  (clojurize-value [this] nil)
+  org.eclipse.rdf4j.model.impl.SimpleIRI
+  (clojurize-value [this] (.getLocalName this))
+  org.eclipse.rdf4j.model.impl.SimpleLiteral
+  (clojurize-value [this]
+    (if (= (.toString (.getDatatype this))
+           "http://www.w3.org/2001/XMLSchema#dateTime")
+      (cf/parse (.getLabel this))
+      (.getLabel this))))
 
 (defn clojurize-results [results]
   (mapv (fn [bindings]
@@ -92,9 +96,9 @@
                                           " SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\" . }\n"
                                           "}")
                     (= :union token) (str " { "
-                                          (apply str
-                                                 (interpose " } UNION { "
-                                                            (map stringify-query (first (rest q)))))
+                                          (->> (map stringify-query (first (rest q)))
+                                               (interpose " } UNION { ")
+                                               (apply str))
                                           "}\n")
                     (= :service token) (str "\nSERVICE "
                                             (first (rest q))
@@ -104,11 +108,14 @@
                     (= :order-by token) "\nORDER BY "
                     (= :group-by token) "\nGROUP BY "
                     (= :limit token) "\nLIMIT "
+                    (= '_ token) " ; "
                     (string? token) (str "\"" token "\"")
                     (vector? token) (str (stringify-query token) " .\n")
                     (list? token) (case (first token)
-                                    ;; XXX super gross!
+                                    ;; XXX super gross! move to (en "str") form
                                     clojure.core/deref (str "@" (second token))
+                                    ;; TODO one of these for each namespace
+                                    p      (str " p:" (property (second token)))
                                     prop   (prop (second token))
                                     qualifier (qualifier (second token))
                                     statement (statement (second token))
@@ -149,11 +156,11 @@
   "Returns a WikiData entity whose entity's label resembles `label`. One can specity `criteria` in the form of :property/entity pairs to help select the right entity."
   (memoize   
    (fn [label & criteria]
-     (if (empty? criteria)
-       ;; no criteria and an exact title match? go with it.
+     (if criteria
+       (query-for-entity label criteria)
+       ;; no criteria? try for an exact match on title
        (if-let [doc (entity-document-by-title label)] 
          (document-id doc)
-         (query-for-entity label criteria))
-       (query-for-entity label criteria)))))
-
+         ;; otherwise query
+         (query-for-entity label criteria))))))
      
