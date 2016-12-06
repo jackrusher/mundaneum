@@ -2,7 +2,7 @@
   (:require [clj-time.core        :as ct]
             [clj-time.format      :as cf]
             [backtick             :refer [template]]
-            [mundaneum.document   :refer [entity-document-by-title document-id]]
+            [mundaneum.document   :refer [entity-document entity-document-by-title document-id]]
             [mundaneum.properties :refer [properties]]))
 
 ;; Need to make it easy to specify these:
@@ -37,7 +37,15 @@
     (if (= (.toString (.getDatatype this))
            "http://www.w3.org/2001/XMLSchema#dateTime")
       (cf/parse (.getLabel this))
-      (.getLabel this))))
+      (.getLabel this)))
+  org.wikidata.wdtk.datamodel.json.jackson.datavalues.JacksonValueString
+  (clojurize-value [this] (.getValue this))
+  org.wikidata.wdtk.datamodel.json.jackson.datavalues.JacksonValueItemId
+  (clojurize-value [this] (.getId this))
+  org.wikidata.wdtk.datamodel.json.jackson.datavalues.JacksonValueTime
+  (clojurize-value [this] (cf/parse (.getTime (.getValue this))))
+  org.wikidata.wdtk.datamodel.json.jackson.datavalues.JacksonValueQuantity
+  (clojurize-value [this] (.toString this)))
 
 (defn clojurize-results [results]
   (mapv (fn [bindings]
@@ -55,21 +63,13 @@
        (.evaluate)
        (org.eclipse.rdf4j.query.QueryResults/asList)
        (clojurize-results)
-       (into #{})))
+;;       (into #{})
+       ))
 
 (defn property
   "Helper function to look up one of the pre-spidered properties by keyword `p`."
   [p]
   (get mundaneum.properties/properties p))
-
-(defn prop [p]
-  (str " wdt:" (property p)))
-
-(defn statement [p]
-  (str " ps:" (property p)))
-
-(defn qualifier [p]
-  (str " pq:" (property p)))
 
 (declare entity)
 
@@ -87,13 +87,14 @@
              (str out
                   (cond
                     (= :select token) "SELECT "
+                    (= :distinct token) "DISTINCT "
                     (= :filter token) (str " FILTER ("
                                            (stringify-query (first (rest q)))
                                            ")\n")
                     (= :where token) (str "\nWHERE {\n"
                                           (stringify-query (first (rest q)))
                                           ;; always bring in the label service
-                                          " SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\" . }\n"
+                                          " SERVICE wikibase:label { bd:serviceParam wikibase:language \"en,de,fr,es,it,ca,nl\" . }\n"
                                           "}")
                     (= :union token) (str " { "
                                           (->> (map stringify-query (first (rest q)))
@@ -116,10 +117,14 @@
                                     clojure.core/deref (str "@" (second token))
                                     ;; TODO one of these for each namespace
                                     p      (str " p:" (property (second token)))
-                                    prop   (prop (second token))
+                                    ps     (str " ps:" (property (second token)))
+                                    pq     (str " pq:" (property (second token)))
+                                    wdt   (str " wdt:" (property (second token)))
                                     qualifier (qualifier (second token))
                                     statement (statement (second token))
-                                    entity (str " wd:" (apply entity (rest token)))
+                                    entity (if-let [e (eval token)]
+                                             (str " wd:" e)
+                                             (throw (Exception. (str "could not evaluate entity expression " (pr-str token)))))
                                     desc   (str "DESC(" (second token) ")")
                                     asc    (str "ASC(" (second token) ")")
                                     count  (str "(COUNT("
@@ -127,7 +132,7 @@
                                                 ") AS "
                                                 (last token)
                                                 ")")
-                                    (throw (Exception. "unknown operator in SPARQL DSL")))
+                                    (throw (Exception. (str "unknown operator in SPARQL DSL: " (pr-str (first token))))))
                     :else (str " " token " "))))
       out)))
 ;; TODO add parametric language choices!
@@ -138,29 +143,26 @@
   [q]
   (do-query wikidata (stringify-query q)))
 
-(defn query-for-entity [label criteria]
-  (->> (query (template [:select ?item
-                         :where [[?item rdfs:label ~label@en]
-                                 ~@(mapv (fn [[p e]]
-                                           (template
-                                            [?item
-                                             ~(symbol (prop p))
-                                             ~(symbol (str "wd:" (entity e)))]))
-                                         (partition 2 criteria))]
-                         :limit 10]))
-       (map :item)
-       (filter #(re-find #"^Q[0-9]*$" %)) ;; ugh
-       first))
-
 (def entity
   "Returns a WikiData entity whose entity's label resembles `label`. One can specity `criteria` in the form of :property/entity pairs to help select the right entity."
   (memoize   
    (fn [label & criteria]
-     (if criteria
-       (query-for-entity label criteria)
-       ;; no criteria? try for an exact match on title
-       (if-let [doc (entity-document-by-title label)] 
-         (document-id doc)
-         ;; otherwise query
-         (query-for-entity label criteria))))))
-     
+     (->> (query
+           (template [:select ?item (count ?p :as ?count)
+                      :where [[?item rdfs:label ~label@en
+                               _ ?p ?whatever]
+                              ~@(mapv (fn [[p e]]
+                                        (template
+                                         [?item
+                                          ~(symbol (str "wdt:" (property p)))
+                                          ~(symbol (str "wd:" e))]))
+                                      (partition 2 criteria))]
+                      :group-by ?item
+                      :order-by (desc ?count)
+                      :limit 10]))
+          (map :item)
+          (remove #(.startsWith % "P")) ; super yuck
+          first))))
+
+;; TODO filter out Wiki disambiguation pages?
+;;:instance-of wd:Q4167410

@@ -58,7 +58,7 @@ environment. The approach I took was:
   make a helper function 
 
 ``` clojure
-(prop :author)
+(property :author)
 ;;=> "P50"
 ```
 
@@ -70,12 +70,15 @@ environment. The approach I took was:
 (entity "James Joyce")
 ;;=> "Q6882"
 
-;; also supports additional criteria to help find the right entity:
-(entity "U1")
-;;=> "Q2472052", which is a Wikipedia disambiguation page
+;; the entity function tries to return the most notable entity 
+;; that matches, but sometimes that isn't what you want.
 
-(entity "U1" :part-of "Berlin U-Bahn")
-;;=> "Q99691", which is U-1 line that runs north of my flat
+(describe (entity "U2"))
+;;=> "Irish alternative rock band"
+
+;; not the one I meant, let's try with more info:
+(describe (entity "U2" :part-of (entity "Berlin U-Bahn")))
+;;=> "underground line in Berlin"
 ```
 
 This already helps to keep my emacs-driven process running
@@ -86,7 +89,7 @@ similar to the one offered by Datomic. This looks like:
 ``` clojure
 ;; what are some works authored by James Joyce?
 (query '[:select ?work ?workLabel
-         :where [[?work (prop :author) (entity "James Joyce")]]
+         :where [[?work (wdt :author) (entity "James Joyce")]]
          :limit 10])
 ;; #{{:work "Q864141", :workLabel "Eveline"}
 ;;   {:work "Q861185", :workLabel "A Little Cloud"}
@@ -107,7 +110,7 @@ around 15 years ago.
 
 ## Condition
 
-The state of this code is appalling. It's around six person-hours old,
+The state of this code is appalling. It's around ten person-hours old,
 and currently a flaming mess of fragility and typos. It is presented
 for entertainment purposes only.
 

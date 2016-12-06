@@ -1,7 +1,7 @@
 (ns mundaneum.core
   (:require [mundaneum.document :as d]
-            [mundaneum.query    :refer [query entity prop statement qualifier
-                                        property]]))
+            [mundaneum.query    :refer [query entity property]]
+            [backtick           :refer [template]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WIKIDATA API (pretty rough to use for anything interesting)
@@ -35,19 +35,22 @@
 (d/describe (entity "U1"))
 ;;=> "Wikipedia disambiguation page"
 
-(d/describe (entity "U1" :part-of "Berlin U-Bahn"))
+(d/describe (entity "U1" :part-of (entity "Berlin U-Bahn")))
 ;;=> "rapid transit line in Berlin, Germany"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUERY
 
 ;; the same question about presidential precedence posed in SPARQL,
-;; which is actually a little complicated:
+;; which is actually a bit complicated because it involves: querying
+;; against property statements and property qualifiers, plus the use
+;; of the _ (a stand-in for SPARQL's semicolon, which is used to say
+;; continue this expression using the same entity):
 (query
  '[:select ?prevLabel
    :where [[(entity "Barack Obama") (p :position-held) ?pos]
-           [?pos (statement :position-held) (entity "President of the United States of America")
-            _ (qualifier :replaces) ?prev]]])
+           [?pos (ps :position-held) (entity "President of the United States of America")
+            _ (pq :replaces) ?prev]]])
 ;;=>#{{:prevLabel "George W. Bush"}}
 
 ;; which can be trivially expanded to list all US presidents and their
@@ -55,8 +58,8 @@
 (query
  '[:select ?prezLabel ?prevLabel
    :where [[?prez (p :position-held) ?pos]
-           [?pos (statement :position-held) (entity "President of the United States of America")
-            _ (qualifier :replaces) ?prev]]])
+           [?pos (ps :position-held) (entity "President of the United States of America")
+            _ (pq :replaces) ?prev]]])
 ;;=>#{{:prezLabel "John Tyler", :prevLabel "William Henry Harrison"}
 ;;    {:prezLabel "Gerald Ford", :prevLabel "Richard Nixon"}
 ;;    {:prezLabel "John Adams", :prevLabel "George Washington"}
@@ -65,8 +68,8 @@
 ;; the parts of various countries, ignoring Canada (sorry, Canada)
 (query
  '[:select ?biggerLabel ?smallerLabel
-   :where [[?bigger (prop :instance-of) (entity "country")]
-           [?bigger (prop :contains-administrative-territorial-entity) ?smaller]
+   :where [[?bigger (wdt :instance-of) (entity "country")]
+           [?bigger (wdt :contains-administrative-territorial-entity) ?smaller]
            :filter [?bigger != (entity "Canada")]]
    :limit 10])
 ;;=>
@@ -89,17 +92,17 @@
 ;; (note the _, which translates to SPARQL's ; which means "use the
 ;; same subject as before")
 (query
- '[:select ?pLabel
-   :where [[?p (prop :award-received) / (prop :subclass-of) * (entity "Nobel Prize")
-            _ (prop :award-received) / (prop :subclass-of) * (entity "Academy Awards")]]])
+ '[:select :distinct ?pLabel
+   :where [[?p (wdt :award-received) / (wdt :subclass-of) * (entity "Nobel Prize")
+            _ (wdt :award-received) / (wdt :subclass-of) * (entity "Academy Awards")]]])
 ;;=> #{{:pLabel "Bob Dylan"} {:pLabel "George Bernard Shaw"}}
 
 ;; notable murders of the ancient world, with date and location
 (query
  '[:select ?killedLabel ?killerLabel ?locationLabel ?when
-   :where [[?killed (prop :killed-by) ?killer] 
-           [?killed (prop :date-of-death) ?when] 
-           [?killed (prop :place-of-death) ?location]]
+   :where [[?killed (wdt :killed-by) ?killer] 
+           [?killed (wdt :date-of-death) ?when] 
+           [?killed (wdt :place-of-death) ?location]]
    :order-by (asc ?when)
    :limit 5])
 ;;=>
@@ -131,13 +134,12 @@
 
 ;; discoveries/inventions grouped by person on the clojure side,
 ;; uncomment the second part of the :where clause to specify only
-;; female inventor/discovers (you'll need to increase the limit, as
-;; there appear to be many highly productive lady astronomers)
+;; female inventor/discovers
 (->> (query
       '[:select ?thingLabel ?whomLabel
-        :where [[?thing (prop :discoverer-or-inventor) ?whom]
-                ;;[?who (prop :sex-or-gender) (entity "female")]
-                ]
+        :where [[?thing (wdt :discoverer-or-inventor) ?whom
+;;                 _ (wdt :sex-or-gender) (entity "female")
+                 ]]
         :limit 100])
  (group-by :whomLabel)
  (reduce #(assoc %1 (first %2) (mapv :thingLabel (second %2))) {}))
@@ -156,7 +158,7 @@
 ;; eye color popularity, grouping and counting as part of the query
 (query
  '[:select ?eyeColorLabel (count ?person :as ?count)
-   :where [[?person (prop :eye-color) ?eyeColor] ]
+   :where [[?person (wdt :eye-color) ?eyeColor] ]
    :group-by ?eyeColorLabel])
 ;;=>
 ;; #{{:eyeColorLabel "yellow", :count "29"} {:eyeColorLabel "red", :count "12"}
@@ -173,9 +175,9 @@
 ;; airports within 20km of Paris, use "around" service
 (query
  '[:select ?place ?placeLabel ?location
-   :where [[(entity "Paris") (prop :coordinate-location) ?parisLoc]
-           [?place (prop :instance-of) / (prop :subclass-of) * (entity "airport")]
-           :service wikibase:around [[?place (prop :coordinate-location) ?location]
+   :where [[(entity "Paris") (wdt :coordinate-location) ?parisLoc]
+           [?place (wdt :instance-of) / (wdt :subclass-of) * (entity "airport")]
+           :service wikibase:around [[?place (wdt :coordinate-location) ?location]
                                      [bd:serviceParam wikibase:center ?parisLoc]
                                      [bd:serviceParam wikibase:radius "20"]]]])
 ;; #{{:place "Q2875445",
@@ -204,10 +206,10 @@
 ;;    :placeLabel "Chelles Le Pin Airport"}}
 
 ;; U1 stations in Berlin w/ geo coords
-(query
- '[:select ?stationLabel ?coord
-   :where [[?station (prop :connecting-line) (entity "U1" :part-of "Berlin U-Bahn")
-            _ (prop :coordinate-location) ?coord]]])
+(query (template
+        [:select ?stationLabel ?coord
+         :where [[?station (wdt :connecting-line) (entity "U1" :part-of ~(entity "Berlin U-Bahn"))
+                  _ (wdt :coordinate-location) ?coord]]]))
 ;;=>
 ;; #{{:coord "Point(13.382777777 52.499166666)",
 ;;    :stationLabel "Möckernbrücke"}
@@ -237,9 +239,9 @@
 ;; born in Scotland or territories thereof
 (query
  '[:select ?itemLabel ?pobLabel
-   :where [:union [[?item (prop :place-of-birth) (entity "Scotland")]
-                   [[?item (prop :place-of-birth) ?pob]
-                    [?pob (prop :located-in-the-administrative-territorial-entity) * (entity "Scotland")]]]]
+   :where [:union [[?item (wdt :place-of-birth) (entity "Scotland")]
+                   [[?item (wdt :place-of-birth) ?pob]
+                    [?pob (wdt :located-in-the-administrative-territorial-entity) * (entity "Scotland")]]]]
    :limit 10])
 ;; #{{:item "Q110974", :itemLabel "James Black"}
 ;;   {:item "Q45864", :itemLabel "John McAfee"}
@@ -252,15 +254,53 @@
 ;;   {:item "Q132399", :itemLabel "James Inglis"}
 ;;   {:item "Q172832", :itemLabel "David Coulthard"}}
 
+(defn make-analogy
+  "Return known analogies for the form `a1` is to `a2` as `b1` is to ???"
+  [a1 a2 b1]
+  (->> (query
+        (template [:select ?isto ?analogyLabel
+                   :where [[~(symbol (str "wd:" a1)) ?isto ~(symbol (str "wd:" a2))]
+                           [~(symbol (str "wd:" b1)) ?isto ?analogy]
+                           ;; tightens analogies by requiring that a1/b2 be of the same kind,
+                           ;; but loses some interesting loose analogies:
+                           ;; [~(symbol (str "wd:" a2)) (wdt :instance-of) ?kind]
+                           ;; [?analogy (wdt :instance-of) ?kind]
+                           ]]))
+       (map #(let [arc (d/id->label (:isto %))]
+               (str (d/id->label a1)
+                    " <" arc "> "
+                    (d/id->label a2)
+                    " as "
+                    (d/id->label b1)
+                    " <" arc "> " (:analogyLabel %))))
+       distinct))
+
+(apply make-analogy (map entity ["The Beatles" "rock and roll" "Miles Davis"]))
+("The Beatles <genre> rock and roll as Miles Davis <genre> jazz.")
+
+(apply make-analogy (map entity ["Lambic" "beer" "red wine"]))
+("Lambic <subclass of> beer as red wine <subclass of> wine")
+
+(apply make-analogy (map entity ["Berlin" "Germany" "Paris"]))
+("Berlin <country> Germany as Paris <country> France"
+ "Berlin <located in the administrative territorial entity> Germany as Paris <located in the administrative territorial entity> Île-de-France"
+ "Berlin <capital of> Germany as Paris <capital of> France")
+
+(make-analogy (entity "Daft Punk")
+              (entity "Paris")
+              ;; clarify the jape we mean
+              (entity "Jape" :instance-of (entity "band")))
+("Daft Punk <location of formation> Paris as Jape <location of formation> Dublin")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO distinct
 ;; TODO OPTIONAL
 ;; TODO BIND
+;; TODO MINUS
 
-;; TODO ASK and DESCRIBE
+;; TODO ASK
 
-;; TODO blank nodes, something like:
+;; TODO blank nodes, for things like:
 ;;
 ;; ?film movie:actor [ a movie:actor ;
 ;;                     movie:actor_name ?actorName ].
