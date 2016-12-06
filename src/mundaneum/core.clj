@@ -3,69 +3,39 @@
             [mundaneum.query    :refer [query entity property]]
             [backtick           :refer [template]]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; WIKIDATA API (pretty rough to use for anything interesting)
+;; To understand what's happening here, it would be a good idea to
+;; read through this document:
 
-(->> (d/entity-document "Q76")  ;; Barack Obama
-     (d/statement-group-by-id "P39") ;; position(s) held
-     (d/statement-by-id "Q11696")    ;; POTUS
-     (d/claim-by-id "P1365")         ;; "replaces"
-     d/value-id                 ;; => "Q207"
-     d/id->label)
-;;=> "George W. Bush"
+;; https://m.wikidata.org/wiki/Wikidata:SPARQL_query_service/queries
 
-;; easier with helper functions
-(->> (d/entity-document (entity "Barack Obama"))
-     (d/statement-group-by-id (property :position-held))
-     (d/statement-by-id (entity "President of the United States of America"))
-     (d/claim-by-id (property :replaces))
-     d/value-id    ;=> "Q207"
-     d/id->label)
-;;=> "George W. Bush"
+;; The first challenge when using Wikidata is finding the right IDs
+;; for the properties and entities you must use to phrase your
+;; question properly. We have functions to help:
 
-;; It's also nice to be able to test whether the entity that you've
-;; requested is the one you expected, like so:
+(entity "U2")
+;;=> "Q396"
 
-(d/describe (entity "Barack Obama"))
-;;"44th President of the United States of America"
+;; Now we know the ID for U2... or do we? Which U2 is it, really?
 
-;; ... and if it isn't, you can refine the request by adding extra
-;; criteria to your call to entity:
+(d/describe (entity "U2"))
+;; "Irish alternative rock band"
 
-(d/describe (entity "U1"))
-;;=> "Wikipedia disambiguation page"
+;; No, that's not the one I wanted! Happily, we can refine the request
+;; by adding extra criteria:
 
-(d/describe (entity "U1" :part-of (entity "Berlin U-Bahn")))
-;;=> "rapid transit line in Berlin, Germany"
+(d/describe (entity "U2" :part-of (entity "Berlin U-Bahn")))
+;; -> "underground line in Berlin"
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; QUERY
+;; We also have functions that turn keywords into property values:
+(property :instance-of)
+;;=> "P31"
 
-;; the same question about presidential precedence posed in SPARQL,
-;; which is actually a bit complicated because it involves: querying
-;; against property statements and property qualifiers, plus the use
-;; of the _ (a stand-in for SPARQL's semicolon, which is used to say
-;; continue this expression using the same entity):
-(query
- '[:select ?prevLabel
-   :where [[(entity "Barack Obama") (p :position-held) ?pos]
-           [?pos (ps :position-held) (entity "President of the United States of America")
-            _ (pq :replaces) ?prev]]])
-;;=>#{{:prevLabel "George W. Bush"}}
+;; ... but we use it indirectly through a set of helper functions
+;; named for Wikidata namespaces, like wdt, p, ps and pq. The link
+;; above will help you understand which one of these you might want
+;; for a given query, but it's most often wdt.
 
-;; which can be trivially expanded to list all US presidents and their
-;; predecessors
-(query
- '[:select ?prezLabel ?prevLabel
-   :where [[?prez (p :position-held) ?pos]
-           [?pos (ps :position-held) (entity "President of the United States of America")
-            _ (pq :replaces) ?prev]]])
-;;=>#{{:prezLabel "John Tyler", :prevLabel "William Henry Harrison"}
-;;    {:prezLabel "Gerald Ford", :prevLabel "Richard Nixon"}
-;;    {:prezLabel "John Adams", :prevLabel "George Washington"}
-;; ...  
-
-;; the parts of various countries, ignoring Canada (sorry, Canada)
+;; All parts of countries, ignoring Canada (sorry, Canada)
 (query
  '[:select ?biggerLabel ?smallerLabel
    :where [[?bigger (wdt :instance-of) (entity "country")]
@@ -74,16 +44,9 @@
    :limit 10])
 ;;=>
 ;; #{{:biggerLabel "Norway", :smallerLabel "Østfold"}
-;;   {:biggerLabel "Norway", :smallerLabel "Troms"}
 ;;   {:biggerLabel "Japan", :smallerLabel "Nara Prefecture"}
-;;   {:biggerLabel "Japan", :smallerLabel "Fukuoka Prefecture"}
-;;   {:biggerLabel "Japan", :smallerLabel "Aomori Prefecture"}
 ;;   {:biggerLabel "Japan", :smallerLabel "Wakayama Prefecture"}
 ;;   {:biggerLabel "Ireland", :smallerLabel "County Wicklow"}
-;;   {:biggerLabel "Japan", :smallerLabel "Fukui Prefecture"}
-;;   {:biggerLabel "Japan", :smallerLabel "Toyama Prefecture"}
-;;   {:biggerLabel "Hungary", :smallerLabel "Hajdú-Bihar County"}
-;;   {:biggerLabel "Hungary", :smallerLabel "Bács-Kiskun County"}
 ;;   ...
 ;;   }
 
@@ -116,21 +79,7 @@
 ;;    :killedLabel "Eurybates",
 ;;    :killerLabel "Sophanes",
 ;;    :locationLabel "Aegina"}
-;;   {:when
-;;    #object[org.joda.time.DateTime 0xfa38908 "-0402-01-01T00:00:00.000Z"],
-;;    :killedLabel "Polemarchus",
-;;    :killerLabel "Thirty Tyrants",
-;;    :locationLabel "Athens"}
-;;   {:when
-;;    #object[org.joda.time.DateTime 0x3a3a111e "-0335-01-01T00:00:00.000Z"],
-;;    :killedLabel "Philip II of Macedon",
-;;    :killerLabel "Pausanias of Orestis",
-;;    :locationLabel "Vergina"}
-;;   {:when
-;;    #object[org.joda.time.DateTime 0x240cb2db "-0479-01-01T00:00:00.000Z"],
-;;    :killedLabel "Ephialtes of Trachis",
-;;    :killerLabel "Athénade",
-;;    :locationLabel "Thessaly"}}
+;; ...
 
 ;; discoveries/inventions grouped by person on the clojure side,
 ;; uncomment the second part of the :where clause to specify only
@@ -144,33 +93,24 @@
  (group-by :whomLabel)
  (reduce #(assoc %1 (first %2) (mapv :thingLabel (second %2))) {}))
 ;;=>
-;; {"The Guardian" ["Panama Papers"],
-;;  "Enrico Fermi"
-;;  ["Fermi resonance"
-;;   "Metropolis–Hastings algorithm"
-;;   "Monte Carlo method"
-;;   "Fermi–Walker transport"],
-;;  "Channel Tunnel" ["Ludovic Breton"],
+;;  "Enrico Fermi" ["Monte Carlo method" "Fermi resonance" "Metropolis–Hastings algorithm" "Fermi–Walker transport"],
 ;;  "Napoleon" ["Napoleon's theorem"],
-;;  "Abd al-Rahman al-Sufi" ["Brocchi's Cluster"]}
+;;  "Abd al-Rahman al-Sufi" ["Brocchi's Cluster"],
+;;  "Noam Chomsky" ["Language acquisition device"],
 ;; ...
 
 ;; eye color popularity, grouping and counting as part of the query
 (query
  '[:select ?eyeColorLabel (count ?person :as ?count)
    :where [[?person (wdt :eye-color) ?eyeColor] ]
-   :group-by ?eyeColorLabel])
+   :group-by ?eyeColorLabel
+   :order-by (desc ?count)])
 ;;=>
-;; #{{:eyeColorLabel "yellow", :count "29"} {:eyeColorLabel "red", :count "12"}
-;;   {:eyeColorLabel "black", :count "145"}
-;;   {:eyeColorLabel "purple", :count "1"}
-;;   {:eyeColorLabel "blue-green", :count "19"}
-;;   {:eyeColorLabel "brown", :count "300"}
-;;   {:eyeColorLabel "blue", :count "342"}
-;;   {:eyeColorLabel "hazel", :count "75"}
-;;   {:eyeColorLabel "green", :count "216"}
-;;   {:eyeColorLabel "dark brown", :count "94"}
-;;   {:eyeColorLabel "amber", :count "13"} {:eyeColorLabel "grey", :count "11"}}
+;; [{:eyeColorLabel "blue", :count "342"}
+;;  {:eyeColorLabel "brown", :count "303"}
+;;  {:eyeColorLabel "green", :count "217"}
+;;  {:eyeColorLabel "black", :count "145"}
+;; ...
 
 ;; airports within 20km of Paris, use "around" service
 (query
@@ -186,24 +126,7 @@
 ;;   {:place "Q738719",
 ;;    :location "Point(2.441388888 48.969444444)",
 ;;    :placeLabel "Paris–Le Bourget Airport"}
-;;   {:place "Q7103340",
-;;    :location "Point(2.362778 48.723333)",
-;;    :placeLabel "Orly Air Base"}
-;;   {:place "Q223416",
-;;    :location "Point(2.362778 48.723333)",
-;;    :placeLabel "Orly Airport"}
-;;   {:place "Q1894366",
-;;    :location "Point(2.191667 48.774167)",
-;;    :placeLabel "Villacoublay Air Base"}
-;;   {:place "Q1894366",
-;;    :location "Point(2.19972222 48.77305556)",
-;;    :placeLabel "Villacoublay Air Base"}
-;;   {:place "Q22975841",
-;;    :location "Point(2.4405591 48.9511837)",
-;;    :placeLabel "Q22975841"}
-;;   {:place "Q2875445",
-;;    :location "Point(2.6075 48.897778)",
-;;    :placeLabel "Chelles Le Pin Airport"}}
+;; ...
 
 ;; U1 stations in Berlin w/ geo coords
 (query (template
@@ -217,24 +140,7 @@
 ;;    :stationLabel "Wittenbergplatz"}
 ;;   {:coord "Point(13.332777777 52.504166666)",
 ;;    :stationLabel "Kurfürstendamm"}
-;;   {:coord "Point(13.361944444 52.5)",
-;;    :stationLabel "Kurfürstenstraße"}
-;;   {:coord "Point(13.325555555 52.5025)", :stationLabel "Uhlandstraße"}
-;;   {:coord "Point(13.441666666 52.500833333)",
-;;    :stationLabel "Schlesisches Tor"}
-;;   {:coord "Point(13.353888888 52.499166666)",
-;;    :stationLabel "Nollendorfplatz"}
-;;   {:coord "Point(13.375277777 52.498333333)",
-;;    :stationLabel "Gleisdreieck"}
-;;   {:coord "Point(13.428 52.4992)", :stationLabel "Görlitzer Bahnhof"}
-;;   {:coord "Point(13.406111111 52.498333333)",
-;;    :stationLabel "Prinzenstraße"}
-;;   {:coord "Point(13.391111111 52.497777777)",
-;;    :stationLabel "Hallesches Tor"}
-;;   {:coord "Point(13.418055555 52.499166666)",
-;;    :stationLabel "Kottbusser Tor"}
-;;   {:coord "Point(13.449047222 52.505083333)",
-;;    :stationLabel "Warschauer Straße subway station"}}
+;; ...
 
 ;; born in Scotland or territories thereof
 (query
@@ -246,14 +152,33 @@
 ;; #{{:item "Q110974", :itemLabel "James Black"}
 ;;   {:item "Q45864", :itemLabel "John McAfee"}
 ;;   {:item "Q8755", :itemLabel "Colin Maclaurin"}
-;;   {:item "Q90317", :itemLabel "Iain Dilthey"}
-;;   {:item "Q122479", :itemLabel "Malcolm IV of Scotland"}
-;;   {:item "Q68508", :itemLabel "Malcolm III of Scotland"}
-;;   {:item "Q81960", :itemLabel "Robert Burns"}
-;;   {:item "Q26326", :itemLabel "Duncan I of Scotland"}
-;;   {:item "Q132399", :itemLabel "James Inglis"}
-;;   {:item "Q172832", :itemLabel "David Coulthard"}}
+;; ...
 
+;; A somewhat complicated question about presidential precedence,
+;; which involves: querying against property statements and property
+;; qualifiers, plus the use of _ (a stand-in for SPARQL's semicolon
+;; operator, which is says "continue this expression using the same
+;; entity"):
+(query
+ '[:select ?prevLabel
+   :where [[(entity "Barack Obama") (p :position-held) ?pos]
+           [?pos (ps :position-held) (entity "President of the United States of America")
+            _ (pq :replaces) ?prev]]])
+;;=>#{{:prevLabel "George W. Bush"}}
+
+;; which can be trivially expanded to list all US presidents and their
+;; predecessors
+(query
+ '[:select ?prezLabel ?prevLabel
+   :where [[?prez (p :position-held) ?pos]
+           [?pos (ps :position-held) (entity "President of the United States of America")
+            _ (pq :replaces) ?prev]]])
+;;=>#{{:prezLabel "John Tyler", :prevLabel "William Henry Harrison"}
+;;    {:prezLabel "Gerald Ford", :prevLabel "Richard Nixon"}
+;;    {:prezLabel "John Adams", :prevLabel "George Washington"}
+;; ...  
+
+;; We can also use triples to find out about analogies in the dataset
 (defn make-analogy
   "Return known analogies for the form `a1` is to `a2` as `b1` is to ???"
   [a1 a2 b1]
@@ -276,21 +201,22 @@
        distinct))
 
 (apply make-analogy (map entity ["The Beatles" "rock and roll" "Miles Davis"]))
-("The Beatles is <genre> to rock and roll as Miles Davis is <genre> to jazz")
+;;=> ("The Beatles is <genre> to rock and roll as Miles Davis is <genre> to jazz")
 
 (apply make-analogy (map entity ["Lambic" "beer" "red wine"]))
-("Lambic is <subclass of> to beer as red wine is <subclass of> to wine")
+;;=> ("Lambic is <subclass of> to beer as red wine is <subclass of> to wine")
 
 (apply make-analogy (map entity ["Berlin" "Germany" "Paris"]))
-("Berlin is <country> to Germany as Paris is <country> to France"
- "Berlin is <located in the administrative territorial entity> to Germany as Paris is <located in the administrative territorial entity> to Île-de-France"
- "Berlin is <capital of> to Germany as Paris is <capital of> to France")
+;;=>
+;; ("Berlin is <country> to Germany as Paris is <country> to France"
+;;  "Berlin is <located in the administrative territorial entity> to Germany as Paris is <located in the administrative territorial entity> to Île-de-France"
+;;  "Berlin is <capital of> to Germany as Paris is <capital of> to France")
 
 (make-analogy (entity "Daft Punk")
               (entity "Paris")
               ;; clarify the jape we mean
               (entity "Jape" :instance-of (entity "band")))
-("Daft Punk is <location of formation> to Paris as Jape is <location of formation> to Dublin")
+;;=> ("Daft Punk is <location of formation> to Paris as Jape is <location of formation> to Dublin")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

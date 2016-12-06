@@ -108,6 +108,13 @@ created for the first
 purpose-built [TripleStore](https://en.wikipedia.org/wiki/Triplestore)
 around 15 years ago.
 
+This code is much easier to understand if you have some familiarity
+with SPARQL and how it can be used with to query Wikidata. I strongly
+recommend
+[this introduction](https://m.wikidata.org/wiki/Wikidata:SPARQL_query_service/queries) to
+get started. I'm trying to make sure all the examples are easy to
+translate to the DSL used here.
+
 ## Condition
 
 The state of this code is appalling. It's around ten person-hours old,

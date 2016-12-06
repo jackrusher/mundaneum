@@ -62,9 +62,7 @@
                            sparql-string)
        (.evaluate)
        (org.eclipse.rdf4j.query.QueryResults/asList)
-       (clojurize-results)
-;;       (into #{})
-       ))
+       (clojurize-results)))
 
 (defn property
   "Helper function to look up one of the pre-spidered properties by keyword `p`."
@@ -73,6 +71,7 @@
 
 (declare entity)
 
+;; TODO should be able to parameterize the label language(s)
 (defn stringify-query
   "Naive conversion of datastructure `q` to a SPARQL query string... fragile af."
   [q]
@@ -81,6 +80,7 @@
       (recur (case token
                :where   (drop 2 q)
                :union   (drop 2 q)
+               :minus   (drop 2 q)
                :filter  (drop 2 q)
                :service (drop 3 q)
                (rest q))
@@ -89,22 +89,25 @@
                     (= :select token) "SELECT "
                     (= :distinct token) "DISTINCT "
                     (= :filter token) (str " FILTER ("
-                                           (stringify-query (first (rest q)))
+                                           (stringify-query (second q))
                                            ")\n")
                     (= :where token) (str "\nWHERE {\n"
-                                          (stringify-query (first (rest q)))
+                                          (stringify-query (second q))
                                           ;; always bring in the label service
                                           " SERVICE wikibase:label { bd:serviceParam wikibase:language \"en,de,fr,es,it,ca,nl\" . }\n"
                                           "}")
                     (= :union token) (str " { "
-                                          (->> (map stringify-query (first (rest q)))
+                                          (->> (map stringify-query (second q))
                                                (interpose " } UNION { ")
                                                (apply str))
                                           "}\n")
+                    (= :minus token) (str " MINUS { "
+                                          (stringify-query (second q))
+                                          "}\n")
                     (= :service token) (str "\nSERVICE "
-                                            (first (rest q))
+                                            (second q)
                                             " {\n"
-                                            (stringify-query (second (rest q)))
+                                            (stringify-query (nth q 2))
                                             "}")
                     (= :order-by token) "\nORDER BY "
                     (= :group-by token) "\nGROUP BY "
@@ -116,17 +119,15 @@
                                     ;; XXX super gross! move to (en "str") form
                                     clojure.core/deref (str "@" (second token))
                                     ;; TODO one of these for each namespace
-                                    p      (str " p:" (property (second token)))
-                                    ps     (str " ps:" (property (second token)))
-                                    pq     (str " pq:" (property (second token)))
-                                    wdt   (str " wdt:" (property (second token)))
-                                    qualifier (qualifier (second token))
-                                    statement (statement (second token))
                                     entity (if-let [e (eval token)]
                                              (str " wd:" e)
                                              (throw (Exception. (str "could not evaluate entity expression " (pr-str token)))))
+                                    p      (str " p:"   (property (second token)))
+                                    ps     (str " ps:"  (property (second token)))
+                                    pq     (str " pq:"  (property (second token)))
+                                    wdt    (str " wdt:" (property (second token)))
                                     desc   (str "DESC(" (second token) ")")
-                                    asc    (str "ASC(" (second token) ")")
+                                    asc    (str "ASC("  (second token) ")")
                                     count  (str "(COUNT("
                                                 (second token)
                                                 ") AS "
@@ -135,8 +136,6 @@
                                     (throw (Exception. (str "unknown operator in SPARQL DSL: " (pr-str (first token))))))
                     :else (str " " token " "))))
       out)))
-;; TODO add parametric language choices!
-;; bd:serviceParam wikibase:language \"en,fr,de,he,el,fi,no,ja\" .
 
 (defn query
   "Perform the query specified in `q` against the Wikidata SPARQL endpoint."
@@ -151,18 +150,21 @@
            (template [:select ?item (count ?p :as ?count)
                       :where [[?item rdfs:label ~label@en
                                _ ?p ?whatever]
+                              ;; stitch in criteria, if supplied
                               ~@(mapv (fn [[p e]]
                                         (template
                                          [?item
                                           ~(symbol (str "wdt:" (property p)))
                                           ~(symbol (str "wd:" e))]))
-                                      (partition 2 criteria))]
+                                      (partition 2 criteria))
+                              ;; no :instance-of / :subclass-of properties
+                              :minus [?item wdt:P31 / wdt:P279 + wd:Q18616576]]
+                      ;; take entity the most properties
                       :group-by ?item
                       :order-by (desc ?count)
-                      :limit 10]))
-          (map :item)
-          (remove #(.startsWith % "P")) ; super yuck
-          first))))
+                      :limit 1]))
+          first
+          :item))))
 
 ;; TODO filter out Wiki disambiguation pages?
 ;;:instance-of wd:Q4167410
