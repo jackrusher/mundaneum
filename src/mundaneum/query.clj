@@ -173,25 +173,27 @@
 ;; TODO filter out Wiki disambiguation pages?
 ;;:instance-of wd:Q4167410
 
-(defn describe
+(def describe
   "Returns the description of the entity with `id`."
-  [id]
-  (->> (query
-        (template [:select ?itemDescription
-                   :where [[?item rdfs:label ?o]
-                           :filter [?item = ~(symbol (str "wd:" id))]]]))
-       first
-       :itemDescription))
+  (memoize
+   (fn [id]
+     (->> (query
+           (template [:select ?itemDescription
+                      :where [[?item rdfs:label ?o]
+                              :filter [?item = ~(symbol (str "wd:" id))]]]))
+          first
+          :itemDescription))))
 
-(defn label
+(def label
   "Returns the description of the entity with `id`."
-  [id]
-  (->> (query
-        (template [:select ?itemLabel
-                   :where [[?item rdfs:label ?o]
-                           :filter [?item = ~(symbol (str "wd:" id))]]]))
-       first
-       :itemLabel))
+  (memoize
+   (fn [id]
+     (->> (query
+           (template [:select ?itemLabel
+                      :where [[?item rdfs:label ?o]
+                              :filter [?item = ~(symbol (str "wd:" id))]]]))
+          first
+          :itemLabel))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
