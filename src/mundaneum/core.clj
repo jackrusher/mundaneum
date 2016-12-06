@@ -1,6 +1,5 @@
 (ns mundaneum.core
-  (:require [mundaneum.document :as d]
-            [mundaneum.query    :refer [query entity property]]
+  (:require [mundaneum.query    :refer [describe entity label property query]]
             [backtick           :refer [template]]))
 
 ;; To understand what's happening here, it would be a good idea to
@@ -17,13 +16,13 @@
 
 ;; Now we know the ID for U2... or do we? Which U2 is it, really?
 
-(d/describe (entity "U2"))
+(describe (entity "U2"))
 ;; "Irish alternative rock band"
 
 ;; No, that's not the one I wanted! Happily, we can refine the request
 ;; by adding extra criteria:
 
-(d/describe (entity "U2" :part-of (entity "Berlin U-Bahn")))
+(describe (entity "U2" :part-of (entity "Berlin U-Bahn")))
 ;; -> "underground line in Berlin"
 
 ;; We also have functions that turn keywords into property values:
@@ -191,12 +190,12 @@
                            ;; [~(symbol (str "wd:" a2)) (wdt :instance-of) ?kind]
                            ;; [?analogy (wdt :instance-of) ?kind]
                            ]]))
-       (map #(let [arc (d/id->label (:isto %))]
-               (str (d/id->label a1)
+       (map #(let [arc (label (:isto %))]
+               (str (label a1)
                     " is <" arc "> to "
-                    (d/id->label a2)
+                    (label a2)
                     " as "
-                    (d/id->label b1)
+                    (label b1)
                     " is <" arc "> to " (:analogyLabel %))))
        distinct))
 
@@ -218,15 +217,3 @@
               (entity "Jape" :instance-of (entity "band")))
 ;;=> ("Daft Punk is <location of formation> to Paris as Jape is <location of formation> to Dublin")
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; TODO OPTIONAL
-;; TODO BIND
-;; TODO MINUS
-
-;; TODO ASK
-
-;; TODO blank nodes, for things like:
-;;
-;; ?film movie:actor [ a movie:actor ;
-;;                     movie:actor_name ?actorName ].

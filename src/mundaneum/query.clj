@@ -2,7 +2,6 @@
   (:require [clj-time.core        :as ct]
             [clj-time.format      :as cf]
             [backtick             :refer [template]]
-            [mundaneum.document   :refer [entity-document entity-document-by-title document-id]]
             [mundaneum.properties :refer [properties]]))
 
 ;; Need to make it easy to specify these:
@@ -119,20 +118,26 @@
                                     ;; XXX super gross! move to (en "str") form
                                     clojure.core/deref (str "@" (second token))
                                     ;; TODO one of these for each namespace
-                                    entity (if-let [e (eval token)]
-                                             (str " wd:" e)
-                                             (throw (Exception. (str "could not evaluate entity expression " (pr-str token)))))
-                                    p      (str " p:"   (property (second token)))
-                                    ps     (str " ps:"  (property (second token)))
-                                    pq     (str " pq:"  (property (second token)))
-                                    wdt    (str " wdt:" (property (second token)))
-                                    desc   (str "DESC(" (second token) ")")
-                                    asc    (str "ASC("  (second token) ")")
-                                    count  (str "(COUNT("
-                                                (second token)
-                                                ") AS "
-                                                (last token)
-                                                ")")
+                                    entity  (if-let [e (eval token)]
+                                              (str " wd:" e)
+                                              (throw (Exception. (str "could not evaluate entity expression " (pr-str token)))))
+                                    p       (str " p:"   (property (second token)))
+                                    ps      (str " ps:"  (property (second token)))
+                                    pq      (str " pq:"  (property (second token)))
+                                    wdt     (str " wdt:" (property (second token)))
+                                    inverse (str "^" (second token))
+                                    desc    (str "DESC(" (second token) ")")
+                                    asc     (str "ASC("  (second token) ")")
+                                    count   (str "(COUNT("
+                                                 (second token)
+                                                 ") AS "
+                                                 (last token)
+                                                 ")")
+                                    sum     (str "(SUM("
+                                                 (second token)
+                                                 ") AS "
+                                                 (last token)
+                                                 ")")
                                     (throw (Exception. (str "unknown operator in SPARQL DSL: " (pr-str (first token))))))
                     :else (str " " token " "))))
       out)))
@@ -165,6 +170,38 @@
                       :limit 1]))
           first
           :item))))
-
 ;; TODO filter out Wiki disambiguation pages?
 ;;:instance-of wd:Q4167410
+
+(defn describe
+  "Returns the description of the entity with `id`."
+  [id]
+  (->> (query
+        (template [:select ?itemDescription
+                   :where [[?item rdfs:label ?o]
+                           :filter [?item = ~(symbol (str "wd:" id))]]]))
+       first
+       :itemDescription))
+
+(defn label
+  "Returns the description of the entity with `id`."
+  [id]
+  (->> (query
+        (template [:select ?itemLabel
+                   :where [[?item rdfs:label ?o]
+                           :filter [?item = ~(symbol (str "wd:" id))]]]))
+       first
+       :itemLabel))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; TODO FILTER expressions
+;; TODO OPTIONAL
+;; TODO BIND
+
+;; TODO ASK
+
+;; TODO blank nodes, for things like:
+;;
+;; ?film movie:actor [ a movie:actor ;
+;;                     movie:actor_name ?actorName ].

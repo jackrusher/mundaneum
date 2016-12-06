@@ -2,6 +2,12 @@
 
 ;; WikiData entities are served as documents via the WikibaseDataFetcher
 
+;; XXX these routines are no longer used by the rest of the code, will
+;; be eliminated soon.
+
+;; if we want these sorts of functions, it's probably better to just use:
+;; https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&ids=Q76
+
 (def fetcher
   "Singleton fetcher instance for the WikiData API endpoint."
   (let [fetcher (org.wikidata.wdtk.wikibaseapi.WikibaseDataFetcher/getWikidataDataFetcher)
@@ -80,14 +86,6 @@
   "Returns the text of the first label of the document with `id`."
   [id]
   (label (entity-document id)))
-
-(defn describe
-  "Return the English textual description of the document with `id`."
-  ([id] (describe id "en"))
-  ([id lang]
-   (when-let [descs (.getDescriptions (entity-document id))]
-     (when-let [desc (get descs lang)]
-       (.getText desc)))))
 
 (defn properties
   "Return a set of properties for the claims made about the entity with this `id`."
