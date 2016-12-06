@@ -261,36 +261,36 @@
         (template [:select ?isto ?analogyLabel
                    :where [[~(symbol (str "wd:" a1)) ?isto ~(symbol (str "wd:" a2))]
                            [~(symbol (str "wd:" b1)) ?isto ?analogy]
-                           ;; tightens analogies by requiring that a1/b2 be of the same kind,
+                           ;; tightens analogies by requiring that a2/b2 be of the same kind,
                            ;; but loses some interesting loose analogies:
                            ;; [~(symbol (str "wd:" a2)) (wdt :instance-of) ?kind]
                            ;; [?analogy (wdt :instance-of) ?kind]
                            ]]))
        (map #(let [arc (d/id->label (:isto %))]
                (str (d/id->label a1)
-                    " <" arc "> "
+                    " is <" arc "> to "
                     (d/id->label a2)
                     " as "
                     (d/id->label b1)
-                    " <" arc "> " (:analogyLabel %))))
+                    " is <" arc "> to " (:analogyLabel %))))
        distinct))
 
 (apply make-analogy (map entity ["The Beatles" "rock and roll" "Miles Davis"]))
-("The Beatles <genre> rock and roll as Miles Davis <genre> jazz.")
+("The Beatles is <genre> to rock and roll as Miles Davis is <genre> to jazz")
 
 (apply make-analogy (map entity ["Lambic" "beer" "red wine"]))
-("Lambic <subclass of> beer as red wine <subclass of> wine")
+("Lambic is <subclass of> to beer as red wine is <subclass of> to wine")
 
 (apply make-analogy (map entity ["Berlin" "Germany" "Paris"]))
-("Berlin <country> Germany as Paris <country> France"
- "Berlin <located in the administrative territorial entity> Germany as Paris <located in the administrative territorial entity> Île-de-France"
- "Berlin <capital of> Germany as Paris <capital of> France")
+("Berlin is <country> to Germany as Paris is <country> to France"
+ "Berlin is <located in the administrative territorial entity> to Germany as Paris is <located in the administrative territorial entity> to Île-de-France"
+ "Berlin is <capital of> to Germany as Paris is <capital of> to France")
 
 (make-analogy (entity "Daft Punk")
               (entity "Paris")
               ;; clarify the jape we mean
               (entity "Jape" :instance-of (entity "band")))
-("Daft Punk <location of formation> Paris as Jape <location of formation> Dublin")
+("Daft Punk is <location of formation> to Paris as Jape is <location of formation> to Dublin")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
