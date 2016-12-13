@@ -117,15 +117,12 @@ translate to the DSL used here.
 
 ## Condition
 
-The state of this code is appalling. It's around ten person-hours old,
-and currently a flaming mess of fragility and typos. It is presented
-for entertainment purposes only.
+This is young code, and the APIs are likely to change in the
+future. It is presented for entertainment purposes only. The
+`mundaneum.core` namespace is all examples, should you care to have a
+play.
 
-This project is just for fun, so I'm not really sure if I'll turn it
-into a proper library with things like doc-strings and tests and some
-possibility of actually working for anyone but me.
-
-The `mundaneum.core` namespace is all examples. Enjoy!
+Enjoy!
 
 ## License
 
