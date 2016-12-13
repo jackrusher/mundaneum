@@ -77,11 +77,12 @@
   (loop [q q out ""]
     (if-let [token (first q)]
       (recur (case token
-               :where   (drop 2 q)
-               :union   (drop 2 q)
-               :minus   (drop 2 q)
-               :filter  (drop 2 q)
-               :service (drop 3 q)
+               :where    (drop 2 q)
+               :optional (drop 2 q)
+               :union    (drop 2 q)
+               :minus    (drop 2 q)
+               :filter   (drop 2 q)
+               :service  (drop 3 q)
                (rest q))
              (str out
                   (cond
@@ -95,6 +96,9 @@
                                           ;; always bring in the label service
                                           " SERVICE wikibase:label { bd:serviceParam wikibase:language \"en,de,fr,es,it,ca,nl\" . }\n"
                                           "}")
+                    (= :optional token) (str " OPTIONAL {\n"
+                                          (stringify-query (second q))
+                                          "}\n")
                     (= :union token) (str " { "
                                           (->> (map stringify-query (second q))
                                                (interpose " } UNION { ")
@@ -124,10 +128,15 @@
                                     p       (str " p:"   (property (second token)))
                                     ps      (str " ps:"  (property (second token)))
                                     pq      (str " pq:"  (property (second token)))
+                                    wd      (str " wd:"  (second token))
                                     wdt     (str " wdt:" (property (second token)))
                                     inverse (str "^" (second token))
                                     desc    (str "DESC(" (second token) ")")
                                     asc     (str "ASC("  (second token) ")")
+                                    year    (str "YEAR("  (second token) ")")
+                                    month   (str "YEAR("  (second token) ")")
+                                    ;;                                    >       (str (second token) " > " (nth token 2))
+                                    now     " NOW()"
                                     count   (str "(COUNT("
                                                  (second token)
                                                  ") AS "

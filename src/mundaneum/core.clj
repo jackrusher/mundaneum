@@ -1,6 +1,7 @@
 (ns mundaneum.core
   (:require [mundaneum.query    :refer [describe entity label property query]]
-            [backtick           :refer [template]]))
+            [backtick           :refer [template]]
+            [clj-time.format    :as    tf]))
 
 ;; To understand what's happening here, it would be a good idea to
 ;; read through this document:
@@ -216,4 +217,55 @@
               ;; clarify the jape we mean
               (entity "Jape" :instance-of (entity "band")))
 ;;=> ("Daft Punk is <location of formation> to Paris as Jape is <location of formation> to Dublin")
+
+(defn releases-since
+  "Returns any creative works published since `year`/`month` by any `entities` known to Wikidata."
+  [since-year since-month entities]
+  (let [ents (map #(if (re-find #"^Q[\d]+" %) % (entity %)) entities)]
+    (query
+     (template [:select ?workLabel ?creatorLabel ?role ?date
+                :where [[?work ?role ?creator _ (wdt :publication-date) ?date]
+                        :union ~(mapv #(vector '?work '?role (symbol (str "wd:" %))) ents)
+                        :filter ((year ?date) >= ~since-year)
+                        :filter ((month ?date) >= ~since-month)]
+                :order-by (asc ?date)]))))
+
+(defn humanize-releases
+  "Make the data presentable."
+  [releases]
+  (->> (group-by :workLabel releases)
+       (map (fn [[work roles]]
+              [(:date (first roles))
+               work
+               (str (:creatorLabel (first roles))
+                    " ("
+                    (->> (map :role roles)
+                         (map label)
+                         distinct
+                         (interpose "/")
+                         (apply str))
+                    ")")]))
+       (sort-by first)
+       (map #(conj (rest %) (tf/unparse (tf/formatter "d MMMM, yyyy") (first %))))))
+
+(->> (releases-since 2015 1 ; year and month
+                   ["Kelly Link" "Stromae" "Guillermo del Toro" "Hayao Miyazaki" "Lydia Davis"
+                    "Werner Herzog" "Björk" "George Saunders" "Feist" "Andrew Bird" "Sofia Coppola"])
+     humanize-releases)
+;;=>
+;; (("1 January, 2015" "Crimson Peak" "Guillermo del Toro (director/screenwriter)")
+;;  ("1 January, 2015" "Queen of the Desert" "Werner Herzog (director/screenwriter)")
+;;  ("20 January, 2015" "Vulnicura" "Björk (producer/performer)")
+;;  ("29 January, 2015" "Red Army" "Werner Herzog (executive producer)")
+;;  ("12 February, 2015" "The Book of Life" "Guillermo del Toro (producer)")
+;;  ("1 October, 2015" "The Look of Silence" "Werner Herzog (producer)")
+;;  ("1 November, 2015" "The Wind Rises" "Hayao Miyazaki (author)")
+;;  ("4 December, 2015" "A Very Murray Christmas" "Sofia Coppola (director)")
+;;  ("1 January, 2016" "Salt and Fire" "Werner Herzog (director/screenwriter/cast member)")
+;;  ("1 January, 2016" "Lo & Behold, Reveries of the Connected World" "Werner Herzog (director/screenwriter)")
+;;  ("1 January, 2016" "Into the Inferno" "Werner Herzog (director)")
+;;  ("1 April, 2016" "Are You Serious" "Andrew Bird (performer)")
+;;  ("1 January, 2017" "The Shape of Water" "Guillermo del Toro (director)")
+;;  ("23 June, 2017" "The Beguiled" "Sofia Coppola (director/screenwriter)")
+;;  ("1 January, 2018" "Pacific Rim: Maelstrom" "Guillermo del Toro (screenwriter)"))
 
