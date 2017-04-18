@@ -2,13 +2,12 @@
 
 ;; from http://quarry.wmflabs.org/run/45013/output/1/json
 ;;
-;; (reduce
-;;  #(assoc %1 (keyword (clojure.string/replace (clojure.string/replace (second %2) #"[ /]" "-") #"[\(\)\'\,]" "")) (first %2))
-;;  {}
-;;  ((clojure.edn/read-string
-;;    (clojure.string/replace
-;;     (slurp "wikidata-properties.json")
-;;     ":" " ")) "rows"))
+;; (reduce #(assoc %1 (keyword (clojure.string/replace (clojure.string/replace (second %2) #"[ /]" "-") #"[\(\)\'\,]" "")) (first %2))
+;;         {}
+;;         (get (clojure.edn/read-string
+;;               (clojure.string/replace
+;;                (slurp "/path/to/wikidata-properties.json")
+;;                ":" " ")) 'rows))
 
 (def properties
   {:SIGIC-group "P2165",
