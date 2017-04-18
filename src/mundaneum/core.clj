@@ -56,15 +56,15 @@
 ;; same subject as before")
 (query
  '[:select :distinct ?pLabel
-   :where [[?p (wdt :award-received) / (wdt :subclass-of) * (entity "Nobel Prize")
-            _ (wdt :award-received) / (wdt :subclass-of) * (entity "Academy Awards")]]])
+   :where [[?p (wdt :award-received) / (wdt :instance-of) * (entity "Nobel Prize")
+            _  (wdt :award-received) / (wdt :instance-of) * (entity "Academy Awards")]]])
 ;;=> #{{:pLabel "Bob Dylan"} {:pLabel "George Bernard Shaw"}}
 
 ;; notable murders of the ancient world, with date and location
 (query
  '[:select ?killedLabel ?killerLabel ?locationLabel ?when
-   :where [[?killed (wdt :killed-by) ?killer] 
-           [?killed (wdt :date-of-death) ?when] 
+   :where [[?killed (wdt :killed-by) ?killer]
+           [?killed (wdt :date-of-death) ?when]
            [?killed (wdt :place-of-death) ?location]]
    :order-by (asc ?when)
    :limit 5])
