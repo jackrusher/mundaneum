@@ -171,9 +171,9 @@
                                           ~(symbol (str "wdt:" (property p)))
                                           ~(symbol (str "wd:" e))]))
                                       (partition 2 criteria))
-                              ;; no :instance-of / :subclass-of properties
+                              ;; no :instance-of / :subclass-of wikidata properties
                               :minus [?item wdt:P31 / wdt:P279 + wd:Q18616576]]
-                      ;; take entity the most properties
+                      ;; choose the entity with the most properties
                       :group-by ?item
                       :order-by (desc ?count)
                       :limit 1]))
@@ -207,11 +207,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; TODO FILTER expressions
-;; TODO OPTIONAL
 ;; TODO BIND
-
 ;; TODO ASK
-
 ;; TODO blank nodes, for things like:
 ;;
 ;; ?film movie:actor [ a movie:actor ;

@@ -269,3 +269,13 @@
 ;;  ("23 June, 2017" "The Beguiled" "Sofia Coppola (director/screenwriter)")
 ;;  ("1 January, 2018" "Pacific Rim: Maelstrom" "Guillermo del Toro (screenwriter)"))
 
+;; (query
+;;  '[:select ?awdLabel ?countryLabel  (count ?p :as ?count)
+;;    :where [[?p (wdt :award-received) ?awd
+;;             _  (wdt :place-of-birth) ?birthplace]
+;;            [?awd (wdt :instance-of) (entity "Nobel Prize")]
+;;            [?birthplace (wdt :country) ?country]]
+;;    :group-by ?awdLabel ?countryLabel
+;;    :order-by (desc ?count)])
+
+    
