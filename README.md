@@ -52,10 +52,10 @@ The first order of business was to build a more human-friendly way to
 specify relationships and entities without leaving my coding
 environment. The approach I took was:
 
-* download and reformat the full list of ~3000 properties (fresh as of
-  2016-12-01), shape them into a map of keyword/string pairs where the
+* download and reformat the full list of ~2000 properties (fresh as of
+  2017-04-19), shape them into a map of keyword/string pairs where the
   keyword is the name of the property and the string is its `id`, and
-  make a helper function 
+  make a helper function
 
 ``` clojure
 (property :author)
