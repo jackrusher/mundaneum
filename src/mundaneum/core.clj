@@ -203,14 +203,8 @@
 (apply make-analogy (map entity ["The Beatles" "rock and roll" "Miles Davis"]))
 ;;=> ("The Beatles is <genre> to rock and roll as Miles Davis is <genre> to jazz")
 
-(apply make-analogy (map entity ["Lambic" "beer" "red wine"]))
-;;=> ("Lambic is <subclass of> to beer as red wine is <subclass of> to wine")
-
-(apply make-analogy (map entity ["Berlin" "Germany" "Paris"]))
-;;=>
-;; ("Berlin is <country> to Germany as Paris is <country> to France"
-;;  "Berlin is <located in the administrative territorial entity> to Germany as Paris is <located in the administrative territorial entity> to Île-de-France"
-;;  "Berlin is <capital of> to Germany as Paris is <capital of> to France")
+(apply make-analogy (map entity ["Lambic" "spontaneously fermented beer" "Beaujolais wine"]))
+;;=> ("Lambic is <subclass of> to spontaneously fermented beer as Beaujolais wine is <subclass of> to French wine")
 
 (make-analogy (entity "Daft Punk")
               (entity "Paris")
@@ -248,25 +242,18 @@
        (sort-by first)
        (map #(conj (rest %) (tf/unparse (tf/formatter "d MMMM, yyyy") (first %))))))
 
-(->> (releases-since 2015 1 ; year and month
+(->> (releases-since 2016 1 ; year and month
                    ["Kelly Link" "Stromae" "Guillermo del Toro" "Hayao Miyazaki" "Lydia Davis"
                     "Werner Herzog" "Björk" "George Saunders" "Feist" "Andrew Bird" "Sofia Coppola"])
      humanize-releases)
 ;;=>
-;; (("1 January, 2015" "Crimson Peak" "Guillermo del Toro (director/screenwriter)")
-;;  ("1 January, 2015" "Queen of the Desert" "Werner Herzog (director/screenwriter)")
-;;  ("20 January, 2015" "Vulnicura" "Björk (producer/performer)")
-;;  ("29 January, 2015" "Red Army" "Werner Herzog (executive producer)")
-;;  ("12 February, 2015" "The Book of Life" "Guillermo del Toro (producer)")
-;;  ("1 October, 2015" "The Look of Silence" "Werner Herzog (producer)")
-;;  ("1 November, 2015" "The Wind Rises" "Hayao Miyazaki (author)")
-;;  ("4 December, 2015" "A Very Murray Christmas" "Sofia Coppola (director)")
+;; (("1 January, 2016" "Into the Inferno" "Werner Herzog (director)")
 ;;  ("1 January, 2016" "Salt and Fire" "Werner Herzog (director/screenwriter/cast member)")
 ;;  ("1 January, 2016" "Lo & Behold, Reveries of the Connected World" "Werner Herzog (director/screenwriter)")
-;;  ("1 January, 2016" "Into the Inferno" "Werner Herzog (director)")
-;;  ("1 April, 2016" "Are You Serious" "Andrew Bird (performer)")
 ;;  ("1 January, 2017" "The Shape of Water" "Guillermo del Toro (director)")
-;;  ("23 June, 2017" "The Beguiled" "Sofia Coppola (director/screenwriter)")
+;;  ("1 January, 2017" "Boro The Caterpillar" "Hayao Miyazaki (director)")
+;;  ("14 April, 2017" "Queen of the Desert" "Werner Herzog (director/screenwriter)")
+;;  ("23 June, 2017" "The Beguiled" "Sofia Coppola (director/screenwriter/producer)")
 ;;  ("1 January, 2018" "Pacific Rim: Maelstrom" "Guillermo del Toro (screenwriter)"))
 
 ;; (query
