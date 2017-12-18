@@ -69,19 +69,19 @@
    :order-by (asc ?when)
    :limit 5])
 ;;=>
-;; #{{:when
-;;    #object[org.joda.time.DateTime 0x61b1428a "-0474-01-01T00:00:00.000Z"],
-;;    :killedLabel "Xerxes",
-;;    :killerLabel "Artabanus of Persia",
-;;    :locationLabel "Persia"}
-;;   {:when
-;;    #object[org.joda.time.DateTime 0x2c4daccc "-0490-01-01T00:00:00.000Z"],
-;;    :killedLabel "Eurybates",
-;;    :killerLabel "Sophanes",
-;;    :locationLabel "Aegina"}
-;; ...
+;; [{:when #object[org.joda.time.DateTime 0x6c3de49 "-0513-01-01T00:00:00.000Z"],
+;;   :killedLabel "Hipparchus",
+;;   :killerLabel "Harmodius and Aristogeiton",
+;;   :locationLabel "Athens"}
+;;  {:when #object[org.joda.time.DateTime 0x5d440dce "-0490-01-01T00:00:00.000Z"],
+;;   :killedLabel "Eurybates",
+;;   :killerLabel "Sophanes",
+;;   :locationLabel "Aegina"}
+;;  {:when #object[org.joda.time.DateTime 0x6c6eaddc "-0479-01-01T00:00:00.000Z"],
+;;   :killedLabel "Ephialtes of Trachis",
+;;   :killerLabel "Athénade", :locationLabel "Thessaly"}]
 
-;; discoveries/inventions grouped by person on the clojure side,
+;; Discoveries/inventions grouped by person on the clojure side,
 ;; uncomment the second part of the :where clause to specify only
 ;; female inventor/discovers
 (->> (query
@@ -145,10 +145,10 @@
                    [[?item (wdt :place-of-birth) ?pob]
                     [?pob (wdt :located-in-the-administrative-territorial-entity) * (entity "Scotland")]]]]
    :limit 10])
-;; #{{:item "Q110974", :itemLabel "James Black"}
-;;   {:item "Q45864", :itemLabel "John McAfee"}
-;;   {:item "Q8755", :itemLabel "Colin Maclaurin"}
-;; ...
+;; [{:itemLabel "Colin Maclaurin"}
+;;  {:itemLabel "Scrooge McDuck"}
+;;  {:itemLabel "Patrick Jenkin"}
+;;  {:itemLabel "Duncan I of Scotland"}]
 
 ;; A somewhat complicated question about presidential precedence,
 ;; which involves: querying against property statements and property
@@ -199,9 +199,6 @@
 (apply make-analogy (map entity ["The Beatles" "rock and roll" "Miles Davis"]))
 ;;=> ("The Beatles is <genre> to rock and roll as Miles Davis is <genre> to jazz")
 
-(apply make-analogy (map entity ["Lambic" "spontaneously fermented beer" "Beaujolais wine"]))
-;;=> ("Lambic is <subclass of> to spontaneously fermented beer as Beaujolais wine is <subclass of> to French wine")
-
 (make-analogy (entity "Daft Punk")
               (entity "Paris")
               ;; clarify the jape we mean
@@ -242,15 +239,19 @@
                    ["Kelly Link" "Stromae" "Guillermo del Toro" "Hayao Miyazaki" "Lydia Davis"
                     "Werner Herzog" "Björk" "George Saunders" "Feist" "Andrew Bird" "Sofia Coppola"])
      humanize-releases)
-;;=>
-;; (("1 January, 2016" "Into the Inferno" "Werner Herzog (director)")
-;;  ("1 January, 2016" "Salt and Fire" "Werner Herzog (director/screenwriter/cast member)")
+;; (("1 January, 2016" "Salt and Fire" "Werner Herzog (director/screenwriter/cast member)")
 ;;  ("1 January, 2016" "Lo & Behold, Reveries of the Connected World" "Werner Herzog (director/screenwriter)")
-;;  ("1 January, 2017" "The Shape of Water" "Guillermo del Toro (director)")
+;;  ("1 January, 2016" "Into the Inferno" "Werner Herzog (director)")
+;;  ("1 April, 2016" "Are You Serious" "Andrew Bird (performer)")
 ;;  ("1 January, 2017" "Boro The Caterpillar" "Hayao Miyazaki (director)")
+;;  ("1 January, 2017" "The Shape of Water" "Guillermo del Toro (director)")
+;;  ("14 February, 2017" "Lincoln in the Bardo" "George Saunders (author)")
 ;;  ("14 April, 2017" "Queen of the Desert" "Werner Herzog (director/screenwriter)")
 ;;  ("23 June, 2017" "The Beguiled" "Sofia Coppola (director/screenwriter/producer)")
-;;  ("1 January, 2018" "Pacific Rim: Maelstrom" "Guillermo del Toro (screenwriter)"))
+;;  ("15 September, 2017" "The Gate" "Björk (performer)")
+;;  ("1 November, 2017" "Utopia" "Björk (performer)")
+;;  ("15 November, 2017" "Blissing Me (song)" "Björk (performer)")
+;;  ("1 January, 2018" "Pacific Rim Uprising" "Guillermo del Toro (screenwriter/producer)"))
 
 ;; (query
 ;;  '[:select ?awdLabel ?countryLabel  (count ?p :as ?count)
