@@ -30,24 +30,19 @@
 
     ;; all stations on the U1 line in Berlin, with lat/long
     (let [u1 (entity "U1" :part-of (entity "Berlin U-Bahn"))]
-      (is (= (query
-              (template
-               [:select ?stationLabel ?coord
-                :where [[?station (wdt :connecting-line) (wd ~u1)
-                         _ (wdt :coordinate-location) ?coord]]]))
-             [{:coord "Point(13.325555555 52.5025)",      :stationLabel "Uhlandstraße"}
-              {:coord "Point(13.353888888 52.499166666)", :stationLabel "Nollendorfplatz"}
-              {:coord "Point(13.428 52.4992)",            :stationLabel "Görlitzer Bahnhof"}
-              {:coord "Point(13.441666666 52.500833333)", :stationLabel "Schlesisches Tor"}
-              {:coord "Point(13.391111111 52.497777777)", :stationLabel "Hallesches Tor"}
-              {:coord "Point(13.332777777 52.504166666)", :stationLabel "Kurfürstendamm"}
-              {:coord "Point(13.375277777 52.498333333)", :stationLabel "Gleisdreieck"}
-              {:coord "Point(13.406111111 52.498333333)", :stationLabel "Prinzenstraße"}
-              {:coord "Point(13.361944444 52.5)",         :stationLabel "Kurfürstenstraße"}
-              {:coord "Point(13.343055555 52.501944444)", :stationLabel "Wittenbergplatz"}
-              {:coord "Point(13.382777777 52.499166666)", :stationLabel "Möckernbrücke"}
-              {:coord "Point(13.418055555 52.499166666)", :stationLabel "Kottbusser Tor"}
-              {:coord "Point(13.449047222 52.505083333)", :stationLabel "Warschauer Straße subway station"}])))
+      (is (= (->> (query
+                   (template
+                    [:select ?stationLabel ?coord
+                     :where [[?station (wdt :connecting-line) (wd ~u1)
+                              _ (wdt :coordinate-location) ?coord]]]))
+                  (map :stationLabel)
+                  (into #{}))
+             #{"Kurfürstenstraße metro station" "Möckernbrücke"
+               "Berlin Warschauer Straße station"
+               "Warschauer Straße subway station" "Schlesisches Tor"
+               "Hallesches Tor" "Kurfürstendamm metro station" "Uhlandstraße"
+               "Wittenbergplatz" "Görlitzer Bahnhof" "Gleisdreieck"
+               "Nollendorfplatz metro station" "Prinzenstraße" "Kottbusser Tor"})))
 
     ;; Obama's predecessor
     (let [potus (entity "President of the United States of America")
