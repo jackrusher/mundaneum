@@ -7,7 +7,7 @@
   (testing "Property lookups"
     (is (= (property :instance-of) "P31"))
     (is (= (property :part-of) "P361")))
-  
+
   (testing "Entity lookup/description"
     (is (= (entity "U2") "Q396"))
     (is (= (describe (entity "U2")) "Irish alternative rock band"))
@@ -17,15 +17,15 @@
            "underground line in Berlin"))))
 
 (deftest queries
-  (testing "Example queries"    
+  (testing "Example queries"
     ;; who has won a nobel prize and an academy award?
     (let [nobel (entity "Nobel Prize")
           oscar (entity "Academy Awards")]
       (is (= (query
               (template
                [:select :distinct ?pLabel
-                :where [[?p (wdt :award-received) / (wdt :subclass-of) * (wd ~nobel)
-                         _ (wdt :award-received) / (wdt :subclass-of) * (wd ~oscar)]]]))
+                :where [[?p (wdt :award-received) / (wdt :instance-of) * (wd ~nobel)
+                         _  (wdt :award-received) / (wdt :instance-of) * (wd ~oscar)]]]))
              [{:pLabel "Bob Dylan"} {:pLabel "George Bernard Shaw"}])))
 
     ;; all stations on the U1 line in Berlin, with lat/long
@@ -59,4 +59,3 @@
                         [?pos (ps :position-held) (wd ~potus)
                          _ (pq :replaces) ?prev]]]))
              [{:prevLabel "George W. Bush"}])))))
-

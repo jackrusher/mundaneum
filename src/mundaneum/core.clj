@@ -116,16 +116,12 @@
 (query
  '[:select ?place ?placeLabel ?location
    :where [[(entity "Paris") (wdt :coordinate-location) ?parisLoc]
-           [?place (wdt :instance-of) / (wdt :subclass-of) * (entity "airport")]
+           [?place (wdt :instance-of) (entity "airport")]
            :service wikibase:around [[?place (wdt :coordinate-location) ?location]
                                      [bd:serviceParam wikibase:center ?parisLoc]
                                      [bd:serviceParam wikibase:radius "20"]]]])
-;; #{{:place "Q2875445",
-;;    :location "Point(2.60611 48.8967)",
-;;    :placeLabel "Chelles Le Pin Airport"}
-;;   {:place "Q738719",
-;;    :location "Point(2.441388888 48.969444444)",
-;;    :placeLabel "Paris–Le Bourget Airport"}
+;; [{:place "Q1894366", :location "Point(2.191667 48.774167)", :placeLabel "Villacoublay Air Base"}
+;;  {:place "Q1894366", :location "Point(2.19972222 48.77305556)", :placeLabel "Villacoublay Air Base"}
 ;; ...
 
 ;; U1 stations in Berlin w/ geo coords
@@ -176,7 +172,7 @@
 ;;=>#{{:prezLabel "John Tyler", :prevLabel "William Henry Harrison"}
 ;;    {:prezLabel "Gerald Ford", :prevLabel "Richard Nixon"}
 ;;    {:prezLabel "John Adams", :prevLabel "George Washington"}
-;; ...  
+;; ...
 
 ;; We can also use triples to find out about analogies in the dataset
 (defn make-analogy
@@ -264,5 +260,3 @@
 ;;            [?birthplace (wdt :country) ?country]]
 ;;    :group-by ?awdLabel ?countryLabel
 ;;    :order-by (desc ?count)])
-
-    
