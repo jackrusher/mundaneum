@@ -18,15 +18,6 @@
 
 (deftest queries
   (testing "Example queries"
-    ;; who has won a nobel prize and an academy award?
-    #_(let [nobel (entity "Nobel Prize")
-            oscar (entity "Academy Awards")]
-        (is (= (query
-                (template
-                 [:select :distinct ?pLabel
-                  :where [[?p (wdt :award-received) / (wdt :instance-of) * (wd ~nobel)
-                           _  (wdt :award-received) / (wdt :instance-of) * (wd ~oscar)]]]))
-               [{:pLabel "Bob Dylan"} {:pLabel "George Bernard Shaw"}])))
 
     ;; all stations on the U1 line in Berlin, with lat/long
     (let [u1 (entity "U1" :part-of (entity "Berlin U-Bahn"))]
@@ -54,7 +45,4 @@
              "County Clare" "Connacht" "County Cavan" "County Limerick" "County Leitrim" "County Offaly"
              "County Westmeath" "County Wicklow" "County Kerry" "County Wexford" "County Kilkenny"
              "County Carlow" "County Dublin" "County Roscommon" "County Galway" "County Monaghan"
-             "County Sligo" "County Mayo" "County Kildare"}))
-
-
-    ))
+             "County Sligo" "County Mayo" "County Kildare"}))))

@@ -4,7 +4,7 @@
             [backtick             :refer [template]]
             [mundaneum.properties :refer [properties]]))
 
-(def ^:dynamic *default-language* "de")
+(def ^:dynamic *default-language* "en")
 
 ;; Need to make it easy to specify these:
 ;;
