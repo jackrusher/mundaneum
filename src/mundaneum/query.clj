@@ -4,6 +4,8 @@
             [backtick             :refer [template]]
             [mundaneum.properties :refer [properties]]))
 
+(def ^:dynamic *default-language* "en")
+
 ;; Need to make it easy to specify these:
 ;;
 ;; PREFIX wd: <http://www.wikidata.org/entity/>
@@ -93,8 +95,8 @@
                                            ")\n")
                     (= :where token) (str "\nWHERE {\n"
                                           (stringify-query (second q))
-                                          ;; always bring in the label service
-                                          " SERVICE wikibase:label { bd:serviceParam wikibase:language \"en,de,fr,es,it,ca,nl\" . }\n"
+                                          ;; ;; always bring in the label service XXX breaks the new lexical queries!
+                                          " SERVICE wikibase:label { bd:serviceParam wikibase:language \"en,fr,es,it,ca,de\" . }\n"
                                           "}")
                     (= :optional token) (str " OPTIONAL {\n"
                                           (stringify-query (second q))
@@ -125,6 +127,7 @@
                                     entity  (if-let [e (eval token)]
                                               (str " wd:" e)
                                               (throw (Exception. (str "could not evaluate entity expression " (pr-str token)))))
+                                    literal (str " " (second token))
                                     p       (str " p:"   (property (second token)))
                                     ps      (str " ps:"  (property (second token)))
                                     pq      (str " pq:"  (property (second token)))
@@ -135,6 +138,7 @@
                                     asc     (str "ASC("  (second token) ")")
                                     year    (str "YEAR("  (second token) ")")
                                     month   (str "YEAR("  (second token) ")")
+                                    lang    (str "LANG("  (second token) ")")
                                     ;;                                    >       (str (second token) " > " (nth token 2))
                                     now     " NOW()"
                                     count   (str "(COUNT("
@@ -187,22 +191,22 @@
   (memoize
    (fn [id]
      (->> (query
-           (template [:select ?itemDescription
-                      :where [[?item rdfs:label ?o]
-                              :filter [?item = ~(symbol (str "wd:" id))]]]))
+           (template [:select ?description
+                      :where [[~(symbol (str "wd:" id)) schema:description ?description]
+                              :filter ((lang ?description) = *default-language*)]]))
           first
-          :itemDescription))))
+          :description))))
 
 (def label
   "Returns the description of the entity with `id`."
   (memoize
    (fn [id]
      (->> (query
-           (template [:select ?itemLabel
-                      :where [[?item rdfs:label ?o]
-                              :filter [?item = ~(symbol (str "wd:" id))]]]))
+           (template [:select *
+                      :where [[~(symbol (str "wd:" id)) rdfs:label ?label]
+                              :filter ((lang ?label) = *default-language*)]]))
           first
-          :itemLabel))))
+          :label))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

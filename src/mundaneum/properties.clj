@@ -7,7 +7,7 @@
 ;;         (get (clojure.edn/read-string
 ;;               (clojure.string/replace
 ;;                (slurp "/path/to/wikidata-properties.json")
-;;                ":" " ")) 'rows))
+;;                ":" " ")) "rows"))
 
 (def properties
   {:SIGIC-group "P2165",
@@ -193,7 +193,8 @@
    :presenter "P371",
    :foods-traditionally-associated "P868",
    :National-Heritage-List-for-England-number "P1216",
-   :Norway-Import-Service-and-Registration-Authority-publisher-code "P1275",
+   :Norway-Import-Service-and-Registration-Authority-publisher-code
+   "P1275",
    :Canmore-ID "P718",
    :described-by-source "P1343",
    :Danish-Bibliometric-Research-Indicator-BFI-SNO-CNO "P1250",
@@ -306,7 +307,6 @@
    :topics-main-template "P1424",
    :stated-in "P248",
    :NKC-identifier "P691",
-   :OBSOLETE-title-use-P1476- "P357",
    :crew-member "P1029",
    :Italian-cadastre-code "P806",
    :scan-file-Commons "P996",
@@ -792,7 +792,8 @@
    :category-combines-topics "P971",
    :archive-URL "P1065",
    :light-characteristic-of-a-lighthouse "P1030",
-   :KLfG-Kritisches-Lexikon-der-fremdsprachigen-Gegenwartsliteratur "P1289",
+   :KLfG-Kritisches-Lexikon-der-fremdsprachigen-Gegenwartsliteratur
+   "P1289",
    :Hall-of-Valor-ID "P1869",
    :blood-type "P1853",
    :crystal-habit "P565",
@@ -829,7 +830,8 @@
    :plea "P1437",
    :IHSI-ID "P1370",
    :Dewey-Decimal-Classification "P1036",
-   :World-Health-Organisation-International-Nonproprietary-Name "P1805",
+   :World-Health-Organisation-International-Nonproprietary-Name
+   "P1805",
    :History-of-Parliament-ID "P1614",
    :biosafety-level "P1604",
    :FilmAffinity-identifier "P480",
@@ -901,7 +903,8 @@
    :lower-flammable-limit "P2202",
    :soundtrack-album "P406",
    :located-next-to-body-of-water "P206",
-   :identifier-of-Comité-des-travaux-historiques-et-scientifiques "P1961",
+   :identifier-of-Comité-des-travaux-historiques-et-scientifiques
+   "P1961",
    :redshift "P1090",
    :Scopus-Author-ID "P1153",
    :deity-of "P1049",
@@ -1024,7 +1027,8 @@
    :Encyclopaedia-Metallum-band-ID "P1952",
    :ATVK-ID "P1115",
    :Japanese-High-School-Code "P1386",
-   :Commonwealth-War-Graves-Commission-burial-ground-identifier "P1920",
+   :Commonwealth-War-Graves-Commission-burial-ground-identifier
+   "P1920",
    :main-food-source "P1034",
    :periapsis "P2244",
    :heritagefoundation.ca-ID "P933",
@@ -1190,7 +1194,8 @@
    :BBC-Things-identifer "P1617",
    :party-chief-representative "P210",
    :GrassBase-ID "P1832",
-   :Norway-Database-for-Statistics-on-Higher-education-periodical-ID "P1270",
+   :Norway-Database-for-Statistics-on-Higher-education-periodical-ID
+   "P1270",
    :appointed-by "P748",
    :Exif-make "P2010",
    :Munzinger-Pop-identifier "P1286",
@@ -1218,7 +1223,6 @@
    :type-of-variable-star "P881",
    :translator "P655",
    :NLM-Unique-ID "P1055",
-   :Florentine-musea-Inventario-1890-ID "P1726",
    :population "P1082",
    :armament "P520",
    :number-of-spans "P1314",
@@ -1350,6 +1354,7 @@
    :retrieved "P813",
    :Swedish-Film-Database-person-ID "P2168",
    :Stack-Exchange-tag "P1482",
+   :CONA--identifier "P1669",
    :TERYT-municipality-code "P1653",
    :Kunstindex-Danmark-artwork-ID "P2108",
    :Sandbox-URL "P855",
@@ -1366,7 +1371,8 @@
    :IMDb-identifier "P345",
    :eMedicine "P673",
    :Deutsche-Ultramarathon-Vereinigung-ID "P2162",
-   :Norway-Import-Service-and-Registration-Authority-periodical-code "P1272",
+   :Norway-Import-Service-and-Registration-Authority-periodical-code
+   "P1272",
    :China-railway-TMIS-station-code "P1378",
    :Hermann–Mauguin-notation "P1632",
    :demonym "P1549",
@@ -1497,7 +1503,8 @@
    :Cooper-Hewitt-Person-ID "P2011",
    :game-mode "P404",
    :points-goal-scored-by "P1363",
-   :Smithsonian-American-Art-Museum--person-institution-thesaurus-id "P1795",
+   :Smithsonian-American-Art-Museum--person-institution-thesaurus-id
+   "P1795",
    :Theatricalia-play-ID "P1242",
    :total-reserves "P2134",
    :Dialnet-article "P1610",
@@ -1524,7 +1531,6 @@
    :target "P533",
    :number-of-masts "P1099",
    :Internet-Broadway-Database-person-ID "P1220",
-   :CONA-identifier "P1669",
    :place-of-burial "P119",
    :magnetic-moment "P2069",
    :NNDB-people-ID "P1263",
@@ -1657,7 +1663,8 @@
    :wins "P1355",
    :patron "P1962",
    :cell-component "P681",
-   :Norway-Database-for-Statistics-on-Higher-education-publisher-ID "P1271",
+   :Norway-Database-for-Statistics-on-Higher-education-publisher-ID
+   "P1271",
    :PACE-member-ID "P1331",
    :Catalogus-Professorum-Halensis "P2005",
    :collection "P195",
@@ -1744,6 +1751,7 @@
    :conflict "P607",
    :image-legend "P2096",
    :OBSOLETE-influence-of "P738",
+   :Florentine-musea-Inventario-1890--ID "P1726",
    :medical-condition "P1050",
    :said-to-be-the-same-as "P460",
    :based-on "P144",
@@ -1754,7 +1762,8 @@
    :fusion-enthalpy "P2066",
    :MusicBrainz-label-ID "P966",
    :German-cattle-breed-ID "P2024",
-   :Maltese-Islands-National-Inventory-of-Cultural-Property-identifier "P1799",
+   :Maltese-Islands-National-Inventory-of-Cultural-Property-identifier
+   "P1799",
    :Cycling-Database-ID "P1664",
    :Parsons-code "P1236",
    :IMA-status-and-or-rank "P579",
