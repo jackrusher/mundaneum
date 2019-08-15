@@ -141,6 +141,7 @@
                                     lang    (str "LANG("  (second token) ")")
                                     ;;                                    >       (str (second token) " > " (nth token 2))
                                     now     " NOW()"
+                                    regex   (str "regex (" (second token) ", \"" (last token) "\")")
                                     count   (str "(COUNT("
                                                  (second token)
                                                  ") AS "

@@ -69,6 +69,33 @@
                     [?pob (wdt :located-in-the-administrative-territorial-entity) * (entity "Rome")]]]]
    :limit 10])
 
+
+;; What places in Germany have names that end in -ow/-itz (indicating
+;; that they were historically Slavic)
+;;
+;; (note the _, which translates to SPARQL's ; which means "use the
+;; same subject as before")
+(query
+ '[:select *
+   :where [[?ort (wdt :instance-of) / (wdt :subclass-of) * (entity "human settlement")
+            _ (wdt :country) (entity "Germany")
+            _ rdfs:label ?name
+            _ (wdt :coordinate-location) ?wo]
+           :filter ((lang ?name) = "de")
+           :filter ((regex ?name "(ow|itz)$"))]
+   :limit 10])
+;;=>
+;; [{:ort "Q6448", :wo "Point(13.716666666 50.993055555)", :name "Bannewitz"}
+;;  {:ort "Q93223", :wo "Point(14.233333333 51.233333333)", :name "Crostwitz"}
+;;  {:ort "Q160693", :wo "Point(14.2275 51.2475)", :name "Caseritz"}
+;;  {:ort "Q160779", :wo "Point(14.2628 51.2339)", :name "Prautitz"}
+;;  {:ort "Q162721", :wo "Point(14.265 51.2247)", :name "Nucknitz"}
+;;  {:ort "Q2795", :wo "Point(12.9222 50.8351)", :name "Chemnitz"}
+;;  {:ort "Q115077", :wo "Point(13.5589 54.5586)", :name "Quoltitz"}
+;;  {:ort "Q160799", :wo "Point(14.43713889 51.79291667)", :name "Groß Lieskow"}
+;;  {:ort "Q318609", :wo "Point(7.28119 53.4654)", :name "Abelitz"}
+;;  {:ort "Q1124721", :wo "Point(13.3096 53.7516)", :name "Conerow"}]
+
 ;; WikiData is multilingual! Here's a query to list species of Swift
 ;; (the bird) with their English and German (and often Latin) names
 (query
@@ -210,17 +237,6 @@
 ;; [{:place "Q1894366", :location "Point(2.191667 48.774167)", :placeLabel "Villacoublay Air Base"}
 ;;  {:place "Q1894366", :location "Point(2.19972222 48.77305556)", :placeLabel "Villacoublay Air Base"}
 ;; ...
-
-
-;; the only people to win both an academy award and a nobel prize
-;;
-;; (note the _, which translates to SPARQL's ; which means "use the
-;; same subject as before")
-;; (query
-;;  '[:select :distinct ?pLabel
-;;    :where [[?p (wdt :award-received) / (wdt :instance-of) * (entity "Nobel Prize")
-;;             _  (wdt :award-received) / (wdt :instance-of) * (entity "Academy Awards")]]])
-;;=> #{{:pLabel "Bob Dylan"} {:pLabel "George Bernard Shaw"}}
 
 ;;;; new lexical queries, which are currently broken
 
