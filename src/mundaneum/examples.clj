@@ -1,5 +1,5 @@
 (ns mundaneum.examples
-  (:require [mundaneum.query    :refer [describe entity label property query]]
+  (:require [mundaneum.query    :refer [describe entity label property query *default-language*]]
             [backtick           :refer [template]]
             [clj-time.format    :as    tf]))
 
@@ -45,8 +45,8 @@
       '[:select ?thingLabel ?whomLabel
         :where [[?thing (wdt :discoverer-or-inventor) ?whom]]
         :limit 100])
- (group-by :whomLabel)
- (reduce #(assoc %1 (first %2) (mapv :thingLabel (second %2))) {}))
+     (group-by :whomLabel)
+     (reduce #(assoc %1 (first %2) (mapv :thingLabel (second %2))) {}))
 
 ;; eye color popularity, grouping and counting as part of the query
 (query
@@ -68,6 +68,27 @@
                    [[?item (wdt :place-of-birth) ?pob]
                     [?pob (wdt :located-in-the-administrative-territorial-entity) * (entity "Rome")]]]]
    :limit 10])
+
+;; WikiData is multilingual! Here's a query to list species of Swift
+;; (the bird) with their English and German (and often Latin) names
+(query
+ (template [:select ?englishName ?germanName
+            :where [[?item (wdt :parent-taxon) (entity "Apodiformes")]
+                    [?item rdfs:label ?germanName]
+                    [?item rdfs:label ?englishName]
+                    :filter ((lang ?germanName) = "de")
+                    :filter ((lang ?englishName) = "en")]
+            :limit 10]))
+;;=>
+;; [{:germanName "Jungornithidae", :englishName "Jungornithidae"}
+;;  {:germanName "Eocypselus", :englishName "Eocypselus"}
+;;  {:germanName "Eocypselidae", :englishName "Eocypselidae"}
+;;  {:germanName "Segler", :englishName "Apodidae"}
+;;  {:germanName "Höhlenschwalme", :englishName "Aegothelidae"}
+;;  {:germanName "Aegialornithidae", :englishName "Aegialornithidae"}
+;;  {:germanName "Apodi", :englishName "Apodi"}
+;;  {:germanName "Baumsegler", :englishName "treeswift"}
+;;  {:germanName "Kolibris", :englishName "Trochilidae"}]
 
 ;; We can also use triples to find out about analogies in the dataset
 (defn make-analogy
@@ -91,13 +112,14 @@
                     " is <" arc "> to " (:analogyLabel %))))
        distinct))
 
-(apply make-analogy (map entity ["The Beatles" "rock and roll" "Miles Davis"]))
-
 (make-analogy (entity "Paris")
               (entity "France")
               (entity "Berlin"))
-;; ("Paris is <country> to France as Berlin is <country> to Germany"
-;;  "Paris is <capital of> to France as Berlin is <capital of> to Germany")
+;;=> ("Paris is <country> to France as Berlin is <country> to Germany"
+;;    "Paris is <capital of> to France as Berlin is <capital of> to Germany")
+
+(apply make-analogy (map entity ["The Beatles" "rock and roll" "Miles Davis"]))
+;;=> ("The Beatles is <genre> to rock and roll as Miles Davis is <genre> to jazz")
 
 (defn releases-since
   "Returns any creative works published since `year`/`month` by any `entities` known to Wikidata."
@@ -112,11 +134,10 @@
                 :order-by (asc ?date)]))))
 
 (->> (releases-since 2019 1 ; year and month
-                   ["Kelly Link" "Stromae" "Guillermo del Toro" "Hayao Miyazaki" "Lydia Davis"
-                    "Werner Herzog" "Björk" "George Saunders" "Feist" "Andrew Bird" "Sofia Coppola"])
+                     ["Kelly Link" "Stromae" "Guillermo del Toro" "Hayao Miyazaki" "Lydia Davis"
+                      "Werner Herzog" "Björk" "George Saunders" "Feist" "Andrew Bird" "Sofia Coppola"])
      (map #(select-keys % [:workLabel :creatorLabel]))
      distinct)
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DRAGONS
@@ -159,19 +180,19 @@
 ;; operator, which is says "continue this expression using the same
 ;; entity"):
 #_(query
- '[:select ?prevLabel
-   :where [[(entity "Barack Obama") (p :position-held) ?pos]
-           [?pos (ps :position-held) (entity "President of the United States of America")
-            _ (pq :replaces) ?prev]]])
+   '[:select ?prevLabel
+     :where [[(entity "Barack Obama") (p :position-held) ?pos]
+             [?pos (ps :position-held) (entity "President of the United States of America")
+              _ (pq :replaces) ?prev]]])
 ;;=>#{{:prevLabel "George W. Bush"}}
 
 ;; which can be trivially expanded to list all US presidents and their
 ;; predecessors
 #_(query
- '[:select ?prezLabel ?prevLabel
-   :where [[?prez (p :position-held) ?pos]
-           [?pos (ps :position-held) (entity "President of the United States of America")
-            _ (pq :replaces) ?prev]]])
+   '[:select ?prezLabel ?prevLabel
+     :where [[?prez (p :position-held) ?pos]
+             [?pos (ps :position-held) (entity "President of the United States of America")
+              _ (pq :replaces) ?prev]]])
 ;;=>#{{:prezLabel "John Tyler", :prevLabel "William Henry Harrison"}
 ;;    {:prezLabel "Gerald Ford", :prevLabel "Richard Nixon"}
 ;;    {:prezLabel "John Adams", :prevLabel "George Washington"}
@@ -215,4 +236,4 @@
 ;;            [?target (literal "wdt:P5191*") (literal "wd:L2087")
 ;;             _  (literal "wikibase:lemma") ?targetLabel]]])
 
- 
+

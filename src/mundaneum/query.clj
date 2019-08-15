@@ -4,7 +4,7 @@
             [backtick             :refer [template]]
             [mundaneum.properties :refer [properties]]))
 
-(def ^:dynamic *default-language* "en")
+(def ^:dynamic *default-language* "de")
 
 ;; Need to make it easy to specify these:
 ;;
@@ -193,7 +193,7 @@
      (->> (query
            (template [:select ?description
                       :where [[~(symbol (str "wd:" id)) schema:description ?description]
-                              :filter ((lang ?description) = *default-language*)]]))
+                              :filter ((lang ?description) = ~*default-language*)]]))
           first
           :description))))
 
@@ -204,7 +204,7 @@
      (->> (query
            (template [:select *
                       :where [[~(symbol (str "wd:" id)) rdfs:label ?label]
-                              :filter ((lang ?label) = *default-language*)]]))
+                              :filter ((lang ?label) = ~*default-language*)]]))
           first
           :label))))
 
