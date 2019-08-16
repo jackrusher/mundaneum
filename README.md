@@ -126,7 +126,4 @@ Enjoy!
 
 ## License
 
-Copyright © 2016 Jack Rusher
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Copyright © 2016-2019 Jack Rusher. Distributed under the BSD 0-clause license.
