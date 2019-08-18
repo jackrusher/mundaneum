@@ -1,0 +1,15 @@
+{:paths ["src"]
+ :deps {org.clojure/clojure   {:mvn/version "1.10.1"}
+        backtick              {:mvn/version "0.3.4"}
+        clj-time              {:mvn/version "0.12.2"}
+        clj-http              {:mvn/version "3.1.0"}
+        org.clojure/data.json {:mvn/version "0.2.6"}
+        org.wikidata.wdtk/wdtk-wikibaseapi     {:mvn/version "0.7.0"}
+        org.eclipse.rdf4j/rdf4j-query          {:mvn/version "2.1.2"}
+        org.eclipse.rdf4j/rdf4j-repository-api {:mvn/version "2.1.2"}
+        org.eclipse.rdf4j/rdf4j-runtime        {:mvn/version "2.1.2"}}
+ ;; XXX tests work from inside emacs, fail from the command line?!?
+ :aliases {:test {:extra-paths ["test"]
+                  :extra-deps {com.cognitect/test-runner {:git/url "https://github.com/cognitect-labs/test-runner.git"
+                                                          :sha "209b64504cb3bd3b99ecfec7937b358a879f55c1"}}
+                  :main-opts ["-m" "cognitect.test-runner"]}}}
