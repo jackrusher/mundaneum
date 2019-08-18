@@ -1,5 +1,5 @@
 (ns mundaneum.examples
-  (:require [mundaneum.query    :refer [describe entity label property query *default-language*]]
+  (:require [mundaneum.query    :refer [describe entity label property query stringify-query *default-language*]]
             [backtick           :refer [template]]
             [clj-time.format    :as    tf]))
 
@@ -35,10 +35,9 @@
 ;; a list of the pairs filtered to the situation where the container
 ;; is Ireland
 (query
- '[:select ?biggerLabel ?smallerLabel
-   :where [[?bigger (wdt :contains-administrative-territorial-entity) ?smaller]
-           :filter [?bigger = (entity "Ireland")]]
-   :limit 10])
+ '[:select ?areaLabel
+   :where [[(entity "Ireland") (wdt :contains-administrative-territorial-entity) ?area]]
+   :limit 50])
 
 ;; Discoveries/inventions grouped by person on the clojure side,
 (->> (query
@@ -69,7 +68,6 @@
                     [?pob (wdt :located-in-the-administrative-territorial-entity) * (entity "Rome")]]]]
    :limit 10])
 
-
 ;; What places in Germany have names that end in -ow/-itz (indicating
 ;; that they were historically Slavic)
 ;;
@@ -98,14 +96,13 @@
 
 ;; WikiData is multilingual! Here's a query to list species of Swift
 ;; (the bird) with their English and German (and often Latin) names
-(query
- (template [:select ?englishName ?germanName
-            :where [[?item (wdt :parent-taxon) (entity "Apodiformes")]
-                    [?item rdfs:label ?germanName]
-                    [?item rdfs:label ?englishName]
-                    :filter ((lang ?germanName) = "de")
-                    :filter ((lang ?englishName) = "en")]
-            :limit 10]))
+(query '[:select ?englishName ?germanName
+         :where [[?item (wdt :parent-taxon) (entity "Apodiformes")
+                  _ rdfs:label ?germanName
+                  _ rdfs:label ?englishName]
+                 :filter ((lang ?germanName) = "de")
+                 :filter ((lang ?englishName) = "en")]
+         :limit 10])
 ;;=>
 ;; [{:germanName "Jungornithidae", :englishName "Jungornithidae"}
 ;;  {:germanName "Eocypselus", :englishName "Eocypselus"}
@@ -139,14 +136,21 @@
                     " is <" arc "> to " (:analogyLabel %))))
        distinct))
 
-(make-analogy (entity "Paris")
-              (entity "France")
-              (entity "Berlin"))
+(make-analogy (entity "Paris") (entity "France") (entity "Berlin"))
 ;;=> ("Paris is <country> to France as Berlin is <country> to Germany"
 ;;    "Paris is <capital of> to France as Berlin is <capital of> to Germany")
 
 (apply make-analogy (map entity ["The Beatles" "rock and roll" "Miles Davis"]))
 ;;=> ("The Beatles is <genre> to rock and roll as Miles Davis is <genre> to jazz")
+
+;; airports within 100km of Paris, use "around" service
+(query
+ '[:select :distinct ?placeLabel 
+   :where [[(entity "Paris") (wdt :coordinate-location) ?parisLoc]
+           [?place (wdt :instance-of) (entity "airport")]
+           :service wikibase:around [[?place (wdt :coordinate-location) ?location]
+                                     [bd:serviceParam wikibase:center ?parisLoc]
+                                     [bd:serviceParam wikibase:radius "100"]]]])
 
 (defn releases-since
   "Returns any creative works published since `year`/`month` by any `entities` known to Wikidata."
@@ -166,90 +170,62 @@
      (map #(select-keys % [:workLabel :creatorLabel]))
      distinct)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; DRAGONS
+;; How about something a bit more serious? Here we find drug-gene
+;; product interactions and diseases for which these might be
+;; candidates.
+(->> (query
+      '[:select ?drugLabel ?geneLabel ?diseaseLabel
+        :where [[?drug (wdt :physically-interacts-with) ?gene_product]
+                [?gene_product (wdt :encoded-by) ?gene]
+                [?gene (wdt :genetic-association) ?disease]]
+        :limit 100])
+     (group-by :diseaseLabel)
+     (mapv (fn [[k vs]] [k (mapv #(dissoc % :diseaseLabel) vs)]))
+     (into {}))
+;;=>
+;; {"Parkinson disease"
+;;  [{:drugLabel "SB-203580", :geneLabel "GAK"}],
+;;  "obesity"
+;;  [{:drugLabel "allopurinol", :geneLabel "XDH"}
+;;   {:drugLabel "estriol", :geneLabel "ESR1"}
+;;   {:drugLabel "tamoxifen", :geneLabel "ESR1"}
+;;   {:drugLabel "17β-estradiol", :geneLabel "ESR1"}
+;;    "malaria" [{:drugLabel "benserazide", :geneLabel "DDC"}],
+;;  "systemic lupus erythematosus"
+;;  [{:drugLabel "Hypothetical protein CT_814", :geneLabel "DDA1"}
+;;   {:drugLabel "ibrutinib", :geneLabel "BLK"}],
+;;  "Crohn's disease"
+;;  [{:drugLabel "momelotinib", :geneLabel "JAK2"}
+;;   {:drugLabel "pacritinib", :geneLabel "JAK2"}],
+;;  "multiple sclerosis"
+;;  [{:drugLabel "cabozantinib", :geneLabel "MET"}
+;;   {:drugLabel "crizotinib", :geneLabel "MET"}
+;;   {:drugLabel "tivantinib", :geneLabel "MET"}],
+;;  "ulcerative colitis"
+;;  [{:drugLabel "bumetanide", :geneLabel "GPR35"}
+;;   {:drugLabel "furosemide", :geneLabel "GPR35"}],
+;;  "hepatitis B"
+;;  [{:drugLabel "L-aspartic Acid", :geneLabel "GRIN2A"}
+;;   {:drugLabel "ketamine", :geneLabel "GRIN2A"}]},
 
-;; (query
-;;  '[:select ?awdLabel ?countryLabel  (count ?p :as ?count)
-;;    :where [[?p (wdt :award-received) ?awd
-;;             _  (wdt :place-of-birth) ?birthplace]
-;;            [?awd (wdt :instance-of) (entity "Nobel Prize")]
-;;            [?birthplace (wdt :country) ?country]]
-;;    :group-by ?awdLabel ?countryLabel
-;;    :order-by (desc ?count)])
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Recently added lexical queries
 
-;;(property :derived-from)
+;; A recursive query using property paths
+;; https://en.wikibooks.org/wiki/SPARQL/Property_paths
+(query
+ '[:select :distinct ?ancestorLemma ?ancestorLangLabel
+   :where [[?lexeme (literal "wikibase:lemma") "Quark"@de] ; lexeme for DE word "Quark"
+           [?lexeme (literal "wdt:P5191") + ?ancestor] ; P5191 = derived-from, too new to be in properties list?!
+           [?ancestor (literal "wikibase:lemma") ?ancestorLemma ; get each ancestor lemma and language
+            _ (literal "dct:language") ?ancestorLang]]
+   :limit 20])
+;;=>
+;; [{:xLangLabel "Polish", :xLemma "twaróg"}
+;;  {:xLangLabel "Proto-Slavic", :xLemma "*tvarogъ"}
+;;  {:xLangLabel "Proto-Slavic", :xLemma "*tvoriti"}]
 
-
-;; (defn humanize-releases
-;;   "Make the data presentable."
-;;   [releases]
-;;   (->> (group-by :workLabel releases)
-;;        (map (fn [[work roles]]
-;;               [(:date (first roles))
-;;                work
-;;                (str (:creatorLabel (first roles))
-;;                     " ("
-;;                     (->> (map :role roles)
-;;                          (map label)
-;;                          distinct
-;;                          (interpose "/")
-;;                          (apply str))
-;;                     ")")]))
-;;        (sort-by first)
-;;        (map #(conj (rest %) (tf/unparse (tf/formatter "d MMMM, yyyy") (first %))))))
-
-
-
-;; A somewhat complicated question about presidential precedence,
-;; which involves: querying against property statements and property
-;; qualifiers, plus the use of _ (a stand-in for SPARQL's semicolon
-;; operator, which is says "continue this expression using the same
-;; entity"):
-#_(query
-   '[:select ?prevLabel
-     :where [[(entity "Barack Obama") (p :position-held) ?pos]
-             [?pos (ps :position-held) (entity "President of the United States of America")
-              _ (pq :replaces) ?prev]]])
-;;=>#{{:prevLabel "George W. Bush"}}
-
-;; which can be trivially expanded to list all US presidents and their
-;; predecessors
-#_(query
-   '[:select ?prezLabel ?prevLabel
-     :where [[?prez (p :position-held) ?pos]
-             [?pos (ps :position-held) (entity "President of the United States of America")
-              _ (pq :replaces) ?prev]]])
-;;=>#{{:prezLabel "John Tyler", :prevLabel "William Henry Harrison"}
-;;    {:prezLabel "Gerald Ford", :prevLabel "Richard Nixon"}
-;;    {:prezLabel "John Adams", :prevLabel "George Washington"}
-;; ...
-
-
-;; airports within 20km of Paris, use "around" service
-;; (query
-;;  '[:select ?place ?placeLabel ?location
-;;    :where [[(entity "Paris") (wdt :coordinate-location) ?parisLoc]
-;;            [?place (wdt :instance-of) (entity "airport")]
-;;            :service wikibase:around [[?place (wdt :coordinate-location) ?location]
-;;                                      [bd:serviceParam wikibase:center ?parisLoc]
-;;                                      [bd:serviceParam wikibase:radius "20"]]]])
-;; [{:place "Q1894366", :location "Point(2.191667 48.774167)", :placeLabel "Villacoublay Air Base"}
-;;  {:place "Q1894366", :location "Point(2.19972222 48.77305556)", :placeLabel "Villacoublay Air Base"}
-;; ...
-
-;;;; new lexical queries, which are currently broken
-
-;; SELECT WHERE {
-;;   ?lexeme wdt:P5191 ?target; wikibase:lemma ?lexemeLabel.
-;;   ?target wdt:P5191* wd:L2087; wikibase:lemma ?targetLabel.
-;; }
-
-;; (query
-;;  '[:select ?lexeme ?lexemeLabel ?target ?targetLabel
-;;    :where [[?lexeme (literal "wdt:P5191") ?target
-;;             _  (literal "wikibase:lemma") ?lexemeLabel]
-;;            [?target (literal "wdt:P5191*") (literal "wd:L2087")
-;;             _  (literal "wikibase:lemma") ?targetLabel]]])
-
-
+;; Note the use of (literal ...) for cases were we do not yet support
+;; the namespace/syntax required for the query. This allows for
+;; greater access to the SPARQL endpoint's power while progressively
+;; improving our DSL.
