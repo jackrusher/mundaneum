@@ -109,18 +109,18 @@ purpose-built [TripleStore](https://en.wikipedia.org/wiki/Triplestore)
 around 15 years ago.
 
 This code is much easier to understand if you have some familiarity
-with SPARQL and how it can be used with to query Wikidata. I strongly
-recommend
-[this introduction](https://m.wikidata.org/wiki/Wikidata:SPARQL_query_service/queries) to
-get started. I'm trying to make sure all the examples are easy to
+with SPARQL and how it can be used to query Wikidata. I strongly
+recommend [this
+introduction](https://m.wikidata.org/wiki/Wikidata:SPARQL_query_service/queries)
+to get started. I'm trying to make sure all the examples are easy to
 translate to the DSL used here.
 
 ## Condition
 
 This is young code, and the APIs are likely to change in the
 future. It is presented for entertainment purposes only. The
-`mundaneum.core` namespace is all examples, should you care to have a
-play.
+`mundaneum.examples` namespace is all examples, should you care to
+have a play.
 
 Enjoy!
 
