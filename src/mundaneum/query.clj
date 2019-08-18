@@ -72,7 +72,7 @@
 
 (declare entity)
 
-;; TODO should be able to parameterize the label language(s)
+;; TODO should be able to parameterize the automatic label language(s)
 (defn stringify-query
   "Naive conversion of datastructure `q` to a SPARQL query string... fragile af."
   [q]
@@ -96,7 +96,7 @@
                     (= :where token) (str "\nWHERE {\n"
                                           (stringify-query (second q))
                                           ;; ;; always bring in the label service XXX breaks the new lexical queries!
-                                          " SERVICE wikibase:label { bd:serviceParam wikibase:language \"en,fr,es,it,ca,de\" . }\n"
+                                          " SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\" . }\n"
                                           "}")
                     (= :optional token) (str " OPTIONAL {\n"
                                           (stringify-query (second q))
@@ -121,13 +121,14 @@
                     (string? token) (str "\"" token "\"")
                     (vector? token) (str (stringify-query token) " .\n")
                     (list? token) (case (first token)
-                                    ;; XXX super gross! move to (en "str") form
+                                    ;; an override for unimplemented features, &c
+                                    literal (str " " (second token))
+                                    ;; XXX super gross! move to something like (en "str") form
                                     clojure.core/deref (str "@" (second token))
                                     ;; TODO one of these for each namespace
                                     entity  (if-let [e (eval token)]
                                               (str " wd:" e)
                                               (throw (Exception. (str "could not evaluate entity expression " (pr-str token)))))
-                                    literal (str " " (second token))
                                     p       (str " p:"   (property (second token)))
                                     ps      (str " ps:"  (property (second token)))
                                     pq      (str " pq:"  (property (second token)))
@@ -184,6 +185,7 @@
                       :limit 1]))
           first
           :item))))
+
 ;; TODO filter out Wiki disambiguation pages?
 ;;:instance-of wd:Q4167410
 
@@ -214,7 +216,3 @@
 ;; TODO FILTER expressions
 ;; TODO BIND
 ;; TODO ASK
-;; TODO blank nodes, for things like:
-;;
-;; ?film movie:actor [ a movie:actor ;
-;;                     movie:actor_name ?actorName ].
