@@ -1,6 +1,6 @@
 (ns mundaneum.core-test
   (:require [clojure.test    :refer :all]
-            [mundaneum.query :refer :all]
+            [mundaneum.query :refer [property entity describe query]]
             [backtick        :refer [template]]))
 
 (deftest property-and-entity-tests
@@ -18,7 +18,6 @@
 
 (deftest queries
   (testing "Example queries"
-
     ;; all stations on the U1 line in Berlin, with lat/long
     (let [u1 (entity "U1" :part-of (entity "Berlin U-Bahn"))]
       (is (= (->> (query
@@ -34,10 +33,9 @@
                "Kottbusser Tor station" "Gleisdreieck" "Nollendorfplatz metro station" "Prinzenstraße"})))
 
     ;; administrative districts of Ireland
-    (is (= (->> (query
-                 '[:select ?biggerLabel ?smallerLabel
-                   :where [[?bigger (wdt :contains-administrative-territorial-entity) ?smaller]
-                           :filter [?bigger = (entity "Ireland")]]])
+    (is (= (->> (query '[:select ?biggerLabel ?smallerLabel
+                         :where [[?bigger (wdt :contains-administrative-territorial-entity) ?smaller]
+                                 :filter [?bigger = (entity "Ireland")]]])
                 (map :smallerLabel)
                 (into #{}))
            #{"County Cork" "County Laois" "Leinster" "Ulster" "County Waterford" "County Meath"
