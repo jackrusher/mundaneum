@@ -17,6 +17,7 @@
            "underground line in Berlin"))))
 
 (deftest queries
+  (require '[mundaneum.query :refer [property entity describe query]])
   (testing "Example queries"
     ;; all stations on the U1 line in Berlin, with lat/long
     (let [u1 (entity "U1" :part-of (entity "Berlin U-Bahn"))]
