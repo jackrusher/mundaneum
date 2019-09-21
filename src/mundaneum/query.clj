@@ -162,13 +162,13 @@
   [q]
   (do-query wikidata (stringify-query q)))
 
-(def entity
-  "Returns a WikiData entity whose entity's label resembles `label`. One can specity `criteria` in the form of :property/entity pairs to help select the right entity."
+(def entity-with-lang
+  "Returns a WikiData entity whose entity's label resembles `label` and language `lang`. One can specity `criteria` in the form of :property/entity pairs to help select the right entity."
   (memoize   
-   (fn [label & criteria]
+   (fn [label lang & criteria]
      (->> (query
            (template [:select ?item (count ?p :as ?count)
-                      :where [[?item rdfs:label ~label@en
+                      :where [[?item rdfs:label ~label@~lang
                                _ ?p ?whatever]
                               ;; stitch in criteria, if supplied
                               ~@(mapv (fn [[p e]]
@@ -185,6 +185,11 @@
                       :limit 1]))
           first
           :item))))
+
+(def entity
+  "Returns a WikiData entity whose entity's label resembles `label`. One can specity `criteria` in the form of :property/entity pairs to help select the right entity."
+  (fn [label & criteria]
+    (apply entity-with-lang (concat [label "en"] criteria))))
 
 ;; TODO filter out Wiki disambiguation pages?
 ;;:instance-of wd:Q4167410
