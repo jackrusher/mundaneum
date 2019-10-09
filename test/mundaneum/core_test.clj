@@ -40,6 +40,20 @@
                "Schlesisches Tor" "Hallesches Tor" "Wittenbergplatz metro station"
                "Kurfürstendamm metro station" "Warschauer Straße metro station" "Görlitzer Bahnhof"
                "Kottbusser Tor station" "Gleisdreieck" "Nollendorfplatz metro station" "Prinzenstraße"})))
+
+    ;; airports within 100km of Paris
+    (is (= (->>
+            (query
+             '[:select :distinct ?placeLabel 
+               :where [[(entity "Paris") (wdt :coordinate-location) ?parisLoc]
+                       [?place (wdt :instance-of) (entity "airport")]
+                       :service wikibase:around [[?place (wdt :coordinate-location) ?location]
+                                                 [bd:serviceParam wikibase:center ?parisLoc]
+                                                 [bd:serviceParam wikibase:radius "100"]]]])
+            (map :placeLabel)
+            (into #{}))
+           #{"Paris-Charles de Gaulle Airport" "Beauvais-Tillé Airport" "Pontoise – Cormeilles Aerodrome" "Paris–Le Bourget Airport" "Melun Villaroche Aerodrome"}))
+
     ;; Lexicographic query 
     (is (= (query
             '[:select :distinct ?ancestorLemma ?ancestorLangLabel
