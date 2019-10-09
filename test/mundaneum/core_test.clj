@@ -1,6 +1,6 @@
 (ns mundaneum.core-test
   (:require [clojure.test    :refer :all]
-            [mundaneum.query :refer [property entity describe query]]
+            [mundaneum.query :refer :all]
             [backtick        :refer [template]]))
 
 (deftest property-and-entity-tests
@@ -18,6 +18,15 @@
 
 (deftest queries
   (testing "Example queries"
+    #_(is (= (->> (query
+                 '[:select ?itemLabel
+                   :where [:union [[?item (wdt :place-of-birth) (entity "Rome")]
+                                   [[?item (wdt :place-of-birth) ?pob]
+                                    [?pob (wdt :located-in-the-administrative-territorial-entity) * (entity "Rome")]]]]
+                   :limit 10])
+                (map :itemLabel)
+                (into #{}))
+           #{"Elagabalus" "Marcus Aurelius" "Tiberius" "Lucius Verus" "Julius Caesar" "Titus" "Otho" "Gordian III" "Domitian" "Augustus"}))
     ;; all stations on the U1 line in Berlin, with lat/long
     (let [u1 (entity "U1" :part-of (entity "Berlin U-Bahn"))]
       (is (= (->> (query
@@ -31,16 +40,14 @@
                "Schlesisches Tor" "Hallesches Tor" "Wittenbergplatz metro station"
                "Kurfürstendamm metro station" "Warschauer Straße metro station" "Görlitzer Bahnhof"
                "Kottbusser Tor station" "Gleisdreieck" "Nollendorfplatz metro station" "Prinzenstraße"})))
-
-    ;; administrative districts of Ireland
-    (is (= (->> (query '[:select ?biggerLabel ?smallerLabel
-                         :where [[?bigger (wdt :contains-administrative-territorial-entity) ?smaller]
-                                 :filter [?bigger = (entity "Ireland")]]])
-                (map :smallerLabel)
-                (into #{}))
-           #{"County Cork" "County Laois" "Leinster" "Ulster" "County Waterford" "County Meath"
-             "County Longford" "County Tipperary" "County Donegal" "County Louth" "Munster"
-             "County Clare" "Connacht" "County Cavan" "County Limerick" "County Leitrim" "County Offaly"
-             "County Westmeath" "County Wicklow" "County Kerry" "County Wexford" "County Kilkenny"
-             "County Carlow" "County Dublin" "County Roscommon" "County Galway" "County Monaghan"
-             "County Sligo" "County Mayo" "County Kildare"}))))
+    ;; Lexicographic query 
+    (is (= (query
+            '[:select :distinct ?ancestorLemma ?ancestorLangLabel
+              :where [[?lexeme (literal "wikibase:lemma") "Quark"@de] ; lexeme for DE word "Quark"
+                      [?lexeme (literal "wdt:P5191") + ?ancestor] ; P5191 = derived-from
+                      [?ancestor (literal "wikibase:lemma") ?ancestorLemma ; ancestor lemma and language
+                       _ (literal "dct:language") ?ancestorLang]]
+              :limit 20])
+           [{:ancestorLangLabel "Polish", :ancestorLemma "twaróg"}
+            {:ancestorLangLabel "Proto-Slavic", :ancestorLemma "*tvarogъ"}
+            {:ancestorLangLabel "Proto-Slavic", :ancestorLemma "*tvoriti"}]))))

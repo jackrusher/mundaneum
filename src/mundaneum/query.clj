@@ -143,16 +143,8 @@
                                     ;;                                    >       (str (second token) " > " (nth token 2))
                                     now     " NOW()"
                                     regex   (str "regex (" (second token) ", \"" (last token) "\")")
-                                    count   (str "(COUNT("
-                                                 (second token)
-                                                 ") AS "
-                                                 (last token)
-                                                 ")")
-                                    sum     (str "(SUM("
-                                                 (second token)
-                                                 ") AS "
-                                                 (last token)
-                                                 ")")
+                                    count   (str "(COUNT(" (second token) ") AS " (last token) ")")
+                                    sum     (str "(SUM(" (second token) ") AS " (last token) ")")
                                     (throw (Exception. (str "unknown operator in SPARQL DSL: " (pr-str (first token))))))
                     :else (str " " token " "))))
       out)))
@@ -162,13 +154,16 @@
   [q]
   (do-query wikidata (stringify-query q)))
 
+;; TODO currently memoizes using the *default-language*, which means
+;; that multiple calls in different languages will continue to return
+;; the first result.
 (def entity
   "Returns a WikiData entity whose entity's label resembles `label`. One can specity `criteria` in the form of :property/entity pairs to help select the right entity."
   (memoize   
    (fn [label & criteria]
      (->> (query
            (template [:select ?item (count ?p :as ?count)
-                      :where [[?item rdfs:label ~label@en
+                      :where [[?item rdfs:label ~label@~*default-language*
                                _ ?p ?whatever]
                               ;; stitch in criteria, if supplied
                               ~@(mapv (fn [[p e]]
@@ -189,6 +184,9 @@
 ;; TODO filter out Wiki disambiguation pages?
 ;;:instance-of wd:Q4167410
 
+;; TODO currently memoizes using the *default-language*, which means
+;; that multiple calls in different languages will continue to return
+;; the first result.
 (def describe
   "Returns the description of the entity with `id`."
   (memoize
@@ -200,6 +198,9 @@
           first
           :description))))
 
+;; TODO currently memoizes using the *default-language*, which means
+;; that multiple calls in different languages will continue to return
+;; the first result.
 (def label
   "Returns the description of the entity with `id`."
   (memoize

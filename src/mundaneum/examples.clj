@@ -61,12 +61,15 @@
                   _ (wdt :coordinate-location) ?coord]]]))
 
 ;; born in Rome or territories thereof
-(query
- '[:select ?itemLabel ?pobLabel
-   :where [:union [[?item (wdt :place-of-birth) (entity "Rome")]
-                   [[?item (wdt :place-of-birth) ?pob]
-                    [?pob (wdt :located-in-the-administrative-territorial-entity) * (entity "Rome")]]]]
-   :limit 10])
+(->> (query
+      '[:select ?itemLabel
+        :where [:union [[[?item (wdt :place-of-birth) ?pob]
+                         [?pob (wdt :located-in-the-administrative-territorial-entity) * (entity "Rome")]]]]
+        :limit 10])
+     (map :itemLabel)
+     (into #{}))
+
+#{"Elagabalus" "Marcus Aurelius" "Tiberius" "Lucius Verus" "Julius Caesar" "Titus" "Otho" "Gordian III" "Domitian" "Augustus"}
 
 ;; What places in Germany have names that end in -ow/-itz (indicating
 ;; that they were historically Slavic)
@@ -144,13 +147,16 @@
 ;;=> ("The Beatles is <genre> to rock and roll as Miles Davis is <genre> to jazz")
 
 ;; airports within 100km of Paris, use "around" service
-(query
- '[:select :distinct ?placeLabel 
-   :where [[(entity "Paris") (wdt :coordinate-location) ?parisLoc]
-           [?place (wdt :instance-of) (entity "airport")]
-           :service wikibase:around [[?place (wdt :coordinate-location) ?location]
-                                     [bd:serviceParam wikibase:center ?parisLoc]
-                                     [bd:serviceParam wikibase:radius "100"]]]])
+(->>
+ (query
+  '[:select :distinct ?placeLabel 
+    :where [[(entity "Paris") (wdt :coordinate-location) ?parisLoc]
+            [?place (wdt :instance-of) (entity "airport")]
+            :service wikibase:around [[?place (wdt :coordinate-location) ?location]
+                                      [bd:serviceParam wikibase:center ?parisLoc]
+                                      [bd:serviceParam wikibase:radius "100"]]]])
+ (map :placeLabel)
+ (into #{}))
 
 (defn releases-since
   "Returns any creative works published since `year`/`month` by any `entities` known to Wikidata."
@@ -229,3 +235,34 @@
 ;; the namespace/syntax required for the query. This allows for
 ;; greater access to the SPARQL endpoint's power while progressively
 ;; improving our DSL.
+
+;; German-language media representation in Wikidata
+(mapv
+ (fn [zeitung]
+   (assoc (first (query
+                  (template
+                   [:select (count ?ref :as ?mentions)
+                    :where [[?statement (literal "prov:wasDerivedFrom") ?ref]
+                            [?ref (literal pr:P248) (entity ~zeitung)]]])))
+          :zeitung zeitung))
+ ["Bild" "Süddeutsche Zeitung" "Frankfurter Allgemeine Zeitung" "Die Zeit" "Die Welt" "Die Tageszeitung"])
+;;=>
+;; [{:mentions "57", :zeitung "Süddeutsche Zeitung"}
+;;  {:mentions "19", :zeitung "Frankfurter Allgemeine Zeitung"}
+;;  {:mentions "15", :zeitung "Die Zeit"}
+;;  {:mentions "8", :zeitung "Die Welt"}
+;;  {:mentions "3", :zeitung "Die Tageszeitung"}
+;;  {:mentions "1", :zeitung "Bild"}]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; multiple language support (work ongoing)
+
+;; lookup an entity using Thai as the default language
+(binding [mundaneum.query/*default-language* "th"]
+ (entity "ระยอง"))
+;; => "Q395325"
+
+;; also works for describe
+(binding [mundaneum.query/*default-language* "th"]
+  (describe (entity "ระยอง")))
+;;=> "หน้าแก้ความกำกวมวิกิมีเดีย"
