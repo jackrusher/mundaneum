@@ -18,15 +18,16 @@
 
 (deftest queries
   (testing "Example queries"
-    #_(is (= (->> (query
+    ;; people born in an administrative territory of ancient Rome
+    (is (= (->> (query
                  '[:select ?itemLabel
-                   :where [:union [[?item (wdt :place-of-birth) (entity "Rome")]
-                                   [[?item (wdt :place-of-birth) ?pob]
-                                    [?pob (wdt :located-in-the-administrative-territorial-entity) * (entity "Rome")]]]]
+                   :where [:union [[[?item (wdt :place-of-birth) ?pob]
+                                    [?pob (wdt :located-in-the-administrative-territorial-entity) * (entity "ancient Rome")]]]]
                    :limit 10])
                 (map :itemLabel)
                 (into #{}))
-           #{"Elagabalus" "Marcus Aurelius" "Tiberius" "Lucius Verus" "Julius Caesar" "Titus" "Otho" "Gordian III" "Domitian" "Augustus"}))
+           #{"Marcus Furius Camillus" "Avianus" "Porcia Catonis" "Faustina the Elder" "Hippolytus" "Sylvester I" "Lucius Caecilius Metellus Denter" "Lucius Junius Brutus" "Gaius Valarius Sabinus" "Publius Petronius Turpilianus"}))
+
     ;; all stations on the U1 line in Berlin, with lat/long
     (let [u1 (entity "U1" :part-of (entity "Berlin U-Bahn"))]
       (is (= (->> (query

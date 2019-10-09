@@ -60,16 +60,16 @@
          :where [[?station (wdt :connecting-line) (entity "U7" :part-of ~(entity "Berlin U-Bahn"))
                   _ (wdt :coordinate-location) ?coord]]]))
 
-;; born in Rome or territories thereof
+;; born in ancient Rome or territories thereof
 (->> (query
       '[:select ?itemLabel
         :where [:union [[[?item (wdt :place-of-birth) ?pob]
-                         [?pob (wdt :located-in-the-administrative-territorial-entity) * (entity "Rome")]]]]
+                         [?pob (wdt :located-in-the-administrative-territorial-entity) * (entity "ancient Rome")]]]]
         :limit 10])
      (map :itemLabel)
      (into #{}))
+;;=> #{"Marcus Furius Camillus" "Avianus" "Porcia Catonis" "Faustina the Elder" "Hippolytus" "Sylvester I" "Lucius Caecilius Metellus Denter" "Lucius Junius Brutus" "Gaius Valarius Sabinus" "Publius Petronius Turpilianus"}
 
-#{"Elagabalus" "Marcus Aurelius" "Tiberius" "Lucius Verus" "Julius Caesar" "Titus" "Otho" "Gordian III" "Domitian" "Augustus"}
 
 ;; What places in Germany have names that end in -ow/-itz (indicating
 ;; that they were historically Slavic)
