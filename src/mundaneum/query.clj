@@ -126,7 +126,8 @@
                                     ;; XXX super gross! move to something like (en "str") form
                                     clojure.core/deref (str "@" (second token))
                                     ;; TODO one of these for each namespace
-                                    entity  (if-let [e (eval token)]
+                                    entity  (if-let [e (binding [*ns* (the-ns 'mundaneum.query)]
+                                                         (eval token))]
                                               (str " wd:" e)
                                               (throw (Exception. (str "could not evaluate entity expression " (pr-str token)))))
                                     p       (str " p:"   (property (second token)))
