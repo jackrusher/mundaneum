@@ -70,7 +70,6 @@
      (into #{}))
 ;;=> #{"Marcus Furius Camillus" "Avianus" "Porcia Catonis" "Faustina the Elder" "Hippolytus" "Sylvester I" "Lucius Caecilius Metellus Denter" "Lucius Junius Brutus" "Gaius Valarius Sabinus" "Publius Petronius Turpilianus"}
 
-
 ;; What places in Germany have names that end in -ow/-itz (indicating
 ;; that they were historically Slavic)
 ;;
@@ -213,6 +212,24 @@
 ;;  "hepatitis B"
 ;;  [{:drugLabel "L-aspartic Acid", :geneLabel "GRIN2A"}
 ;;   {:drugLabel "ketamine", :geneLabel "GRIN2A"}]},
+
+(query
+  '[:select ?drugLabel ?geneLabel ?diseaseLabel
+    :where [[?drug (wdt :physically-interacts-with) ?gene_product]
+            [?gene_product (wdt :encoded-by) ?gene]
+            [?gene (wdt :genetic-association) ?disease]]
+    :limit 10])
+;;=>
+;; [{:drugLabel "Hypothetical protein CTL0156", :geneLabel "TP53", :diseaseLabel "basal-cell carcinoma"}
+;;  {:drugLabel "Hypothetical protein CT_788", :geneLabel "TP53", :diseaseLabel "basal-cell carcinoma"}
+;;  {:drugLabel "Hypothetical protein CTL0156", :geneLabel "TP53", :diseaseLabel "head and neck squamous cell carcinoma"}
+;;  {:drugLabel "Hypothetical protein CT_788", :geneLabel "TP53", :diseaseLabel "head and neck squamous cell carcinoma"}
+;;  {:drugLabel "everolimus", :geneLabel "MTOR", :diseaseLabel "macrocephaly-intellectual disability-neurodevelopmental disorder-small thorax syndrome"}
+;;  {:drugLabel "ridaforolimus", :geneLabel "MTOR", :diseaseLabel "macrocephaly-intellectual disability-neurodevelopmental disorder-small thorax syndrome"}
+;;  {:drugLabel "dactolisib", :geneLabel "MTOR", :diseaseLabel "macrocephaly-intellectual disability-neurodevelopmental disorder-small thorax syndrome"}
+;;  {:drugLabel "temsirolimus", :geneLabel "MTOR", :diseaseLabel "macrocephaly-intellectual disability-neurodevelopmental disorder-small thorax syndrome"}
+;;  {:drugLabel "AIDA", :geneLabel "GRM1", :diseaseLabel "autosomal recessive spinocerebellar ataxia 13"}
+;;  {:drugLabel "CPCCOEt", :geneLabel "GRM1", :diseaseLabel "autosomal recessive spinocerebellar ataxia 13"}]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Recently added lexical queries
