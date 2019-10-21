@@ -3,14 +3,15 @@
             [clojure.string :as string]
             [clojure.data.json :as json]))
 
-;; Properties fetched from:
-;; from http://quarry.wmflabs.org/run/45013/output/1/json
+;; Properties fetched using the wikibase command line tool:
+;; https://github.com/maxlath/wikibase-cli
+;; ... example invocation:
+;; $ wb props > props-2019-10-21.json
 (def properties
-  (->> (json/read (io/reader (io/resource "props-2019-08-18.json")) :key-fn keyword)
-       :rows
-       (reduce (fn [m [id kw]]
+  (->> (json/read (io/reader (io/resource "props-2019-10-21.json")))
+       (reduce (fn [m [id text]]
                  (assoc m
-                        (-> kw
+                        (-> text
                             (string/replace #"[ /]" "-")
                             (string/replace #"[\(\)\'\,]" "")
                             keyword)
