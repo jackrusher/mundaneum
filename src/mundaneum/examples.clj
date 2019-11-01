@@ -50,7 +50,7 @@
 ;; eye color popularity, grouping and counting as part of the query
 (query
  '[:select ?eyeColorLabel (count ?person :as ?count)
-   :where [[?person (wdt :eye-color) ?eyeColor] ]
+   :where [[?person (wdt :eye-color) ?eyeColor]]
    :group-by ?eyeColorLabel
    :order-by (desc ?count)])
 
@@ -123,12 +123,12 @@
   (->> (query
         (template [:select ?isto ?analogyLabel
                    :where [[~(symbol (str "wd:" a1)) ?isto ~(symbol (str "wd:" a2))]
-                           [~(symbol (str "wd:" b1)) ?isto ?analogy]
+                           [~(symbol (str "wd:" b1)) ?isto ?analogy]]]))
                            ;; tightens analogies by requiring that a2/b2 be of the same kind,
                            ;; but loses some interesting loose analogies:
                            ;; [~(symbol (str "wd:" a2)) (wdt :instance-of) ?kind]
                            ;; [?analogy (wdt :instance-of) ?kind]
-                           ]]))
+
        (map #(let [arc (label (:isto %))]
                (str (label a1)
                     " is <" arc "> to "
@@ -174,6 +174,7 @@
                       "Werner Herzog" "Björk" "George Saunders" "Feist" "Andrew Bird" "Sofia Coppola"])
      (map #(select-keys % [:workLabel :creatorLabel]))
      distinct)
+
 
 ;; How about something a bit more serious? Here we find drug-gene
 ;; product interactions and diseases for which these might be
@@ -230,6 +231,20 @@
 ;;  {:drugLabel "temsirolimus", :geneLabel "MTOR", :diseaseLabel "macrocephaly-intellectual disability-neurodevelopmental disorder-small thorax syndrome"}
 ;;  {:drugLabel "AIDA", :geneLabel "GRM1", :diseaseLabel "autosomal recessive spinocerebellar ataxia 13"}
 ;;  {:drugLabel "CPCCOEt", :geneLabel "GRM1", :diseaseLabel "autosomal recessive spinocerebellar ataxia 13"}]
+
+
+;; illustrate the use of :values
+(def inchikeys
+  #{"QFJCIRLUMZQUOT-HPLJOQBZSA-N"
+    "MTCJZZBQNCXKAP-KSYZLYKTSA-N"
+    "YNCMLFHHXWETLD-UHFFFAOYSA-N"})
+
+(query
+    '[:select ?compoundLabel
+      :where [[?compound (wdt :InChIKey) ?inchi]]
+      :values ?inchi inchikeys])
+
+;[{:compoundLabel "pyocyanine"} {:compoundLabel "sirolimus"} {:compoundLabel "formycin B"}]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Recently added lexical queries
