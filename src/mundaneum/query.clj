@@ -98,10 +98,9 @@
                     (= :values token) (str "\n VALUES "
                                            (str " " (second q) " ")
                                            "{\n\t"
-                                           (if-let [e (binding [*ns* (the-ns 'mundaneum.query)]
-                                                        (eval (nth q 2)))]
+                                           (if-let [e  (eval (nth q 2))]
                                              (stringify-query e)
-                                             (throw (Exception. (str "could not evaluate symbol in value expansion " (pr-str token)))))
+                                             (throw (Exception. (str "could not evaluate symbol in value expansion " (pr-str (nth q 2))))))
                                            "\n}\n")
                     (= :where token) (str "\nWHERE {\n"
                                           (stringify-query (second q))
