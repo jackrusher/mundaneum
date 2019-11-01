@@ -241,8 +241,8 @@
 
 (query
     '[:select ?compoundLabel
-      :where [[?compound (wdt :InChIKey) ?inchi]]
-      :values ?inchi inchikeys])
+      :where [[?compound (wdt :InChIKey) ?inchi]
+              :values ?inchi inchikeys]])
 
 ;[{:compoundLabel "pyocyanine"} {:compoundLabel "sirolimus"} {:compoundLabel "formycin B"}]
 
