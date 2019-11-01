@@ -84,8 +84,10 @@
                :union    (drop 2 q)
                :minus    (drop 2 q)
                :filter   (drop 2 q)
+               :values   (drop 3 q)
                :service  (drop 3 q)
                (rest q))
+
              (str out
                   (cond
                     (= :select token) "SELECT "
@@ -93,6 +95,14 @@
                     (= :filter token) (str " FILTER ("
                                            (stringify-query (second q))
                                            ")\n")
+                    (= :values token) (str "\n VALUES "
+                                           (str " " (second q) " ")
+                                           "{\n\t"
+                                           (if-let [e (binding [*ns* (the-ns 'mundaneum.query)]
+                                                        (eval (nth q 2)))]
+                                             (stringify-query e)
+                                             (throw (Exception. (str "could not evaluate symbol in value expansion " (pr-str token)))))
+                                           "\n}\n")
                     (= :where token) (str "\nWHERE {\n"
                                           (stringify-query (second q))
                                           ;; ;; always bring in the label service XXX breaks the new lexical queries!
