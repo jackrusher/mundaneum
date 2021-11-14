@@ -6,9 +6,9 @@
 ;; Properties fetched using the wikibase command line tool:
 ;; https://github.com/maxlath/wikibase-cli
 ;; ... example invocation:
-;; $ wb props > props-2019-10-21.json
+;; $ wb props > props-2021-11-04.json
 (def properties
-  (->> (json/read (io/reader (io/resource "props-2019-10-21.json")))
+  (->> (json/read (io/reader (io/resource "props-2021-11-04.json")))
        (reduce (fn [m [id text]]
                  (assoc m
                         (-> text

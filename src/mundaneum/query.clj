@@ -164,7 +164,7 @@
    (fn [label & criteria]
      (->> (query
            (template [:select ?item (count ?p :as ?count)
-                      :where [[?item rdfs:label ~label@~*default-language*
+                      :where [[?item rdfs:label ~label @~*default-language*
                                _ ?p ?whatever]
                               ;; stitch in criteria, if supplied
                               ~@(mapv (fn [[p e]]
