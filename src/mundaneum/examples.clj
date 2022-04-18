@@ -308,6 +308,42 @@
    "http://vocabularies.wikipathways.org/wp#Inhibition"
    "http://vocabularies.wikipathways.org/wp#Conversion")
 
+;; All known metabolites involved in Melatonin metabolism.
+(->> (template {:prefixes {:dc "<http://purl.org/dc/elements/1.1/>"
+                           :wp "<http://vocabularies.wikipathways.org/wp#>"}
+                :select [?metaboliteName]
+                :where [[:values {?item [~(entity "Melatonin metabolism and effects")]}]
+                        [?item ~(wdt :WikiPathways-ID) ?wpid]
+                        [?item ~(wdt :exact-match) ?source_pathway]
+                        [:service "<http://sparql.wikipathways.org/sparql>"
+                         [[?wp_pathway :dc/identifier ?source_pathway]
+                          {?metabolite {a             #{:wp/Metabolite} 
+                                        :dct/isPartOf #{?wp_pathway}
+                                        :rdfs/label    #{?metaboliteName}}}]]]
+                :limit 20})
+     query
+     (map :metaboliteName))
+#_("Cyclic AMP"
+   "cAMP"
+   "CAMP"
+   "Serotonin"
+   "5HT"
+   "5HT [extracellular region]"
+   "5HT [clathrin-sculpted monoamine transport vesicle lumen]"
+   "LPS"
+   "Lipopolysaccharide"
+   "Melatonin"
+   "MLT"
+   "N-Acetylserotonin"
+   "Ac5HT"
+   "5-Hydroxyindoleacetic acid"
+   "HIAA"
+   "Bufotenin"
+   "5HT-N-CH3"
+   "5-Methoxytryptamine"
+   "6-Hydroxymelatonin"
+   "Noradrenaline")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; multiple language support (work ongoing) XXX
 
@@ -320,25 +356,3 @@
 ;; (binding [mundaneum.query/*default-language* "th"]
 ;;   (describe (entity "ระยอง")))
 ;;=> "หน้าแก้ความกำกวมวิกิมีเดีย"
-
-;; TODO add as another example of Federated Query
-
-;; PREFIX lgdo: <http://linkedgeodata.org/ontology/>
-;; PREFIX geom: <http://geovocab.org/geometry#>
-;; PREFIX bif: <bif:>
-;; SELECT ?atm ?geometry ?bank ?bankLabel WHERE {
-;;   hint:Query hint:optimizer "None".  
-;;   SERVICE <http://linkedgeodata.org/sparql> {
-;;     { ?atm a lgdo:Bank; lgdo:atm true. }
-;;     UNION { ?atm a lgdo:Atm. }    
-;;     ?atm geom:geometry [geo:asWKT ?geometry];
-;;          lgdo:operator ?operator.
-;;     FILTER(bif:st_intersects(?geometry, bif:st_point(11.5746898, 48.1479876), 5)) # 5 km around Munich
-;;   }  
-;;   BIND(STRLANG(?operator, "de") as ?bankLabel) 
-;;   ?bank rdfs:label ?bankLabel.
-;;   # bank is part of the Bankcard service network, either via an explicit statement or implicitly due to its legal form (unless explicitly excluded)
-;;   { ?bank wdt:P527 wd:Q806724. }
-;;   UNION { ?bank wdt:P1454 wd:Q5349747. }
-;;   MINUS { wd:Q806724 wdt:P3113 ?bank. }
-;; }
