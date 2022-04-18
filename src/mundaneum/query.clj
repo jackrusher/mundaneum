@@ -10,18 +10,13 @@
 
 (def prefixes
   {:bd "<http://www.bigdata.com/rdf#>"
-   :p "<http://www.wikidata.org/prop/>"
-   :rdf "<http://www.w3.org/1999/02/22-rdf-syntax-ns#>"
-   :rdfs "<http://www.w3.org/2000/01/rdf-schema#>"
-   :wd "<http://www.wikidata.org/entity/>"
-   :wdt "<http://www.wikidata.org/prop/direct/>"
-   :wikibase "<http://wikiba.se/ontology#>"
    :cc "<http://creativecommons.org/ns#>"
    :dct "<http://purl.org/dc/terms/>"
    :geo "<http://www.opengis.net/ont/geosparql#>"
    :hint "<http://www.bigdata.com/queryHints#>"
    :ontolex "<http://www.w3.org/ns/lemon/ontolex#>"
    :owl "<http://www.w3.org/2002/07/owl#>"
+   :p "<http://www.wikidata.org/prop/>"
    :pq "<http://www.wikidata.org/prop/qualifier/>"
    :pqn "<http://www.wikidata.org/prop/qualifier/value-normalized/>"
    :pqv "<http://www.wikidata.org/prop/qualifier/value/>"
@@ -32,14 +27,19 @@
    :ps "<http://www.wikidata.org/prop/statement/>"
    :psn "<http://www.wikidata.org/prop/statement/value-normalized/>"
    :psv "<http://www.wikidata.org/prop/statement/value/>"
+   :rdf "<http://www.w3.org/1999/02/22-rdf-syntax-ns#>"
+   :rdfs "<http://www.w3.org/2000/01/rdf-schema#>"
    :schema "<http://schema.org/>"
    :skos "<http://www.w3.org/2004/02/skos/core#>"
+   :wd "<http://www.wikidata.org/entity/>"
    :wdata "<http://www.wikidata.org/wiki/Special:EntityData/>"
    :wdno "<http://www.wikidata.org/prop/novalue/>"
    :wdref "<http://www.wikidata.org/reference/>"
    :wds "<http://www.wikidata.org/entity/statement/>"
+   :wdt "<http://www.wikidata.org/prop/direct/>"
    :wdtn "<http://www.wikidata.org/prop/direct-normalized/>"
    :wdv "<http://www.wikidata.org/value/>"
+   :wikibase "<http://wikiba.se/ontology#>"
    :xsd "<http://www.w3.org/2001/XMLSchema#>"})
 
 (def uri->prefix
@@ -84,7 +84,8 @@
 
 ;; TODO should label service be optional? it should definitely use default-language
 (defn query [sparql-form]
-  (-> (merge {:prefixes prefixes} sparql-form)
+  (-> sparql-form
+      (update :prefixes merge prefixes )
       (update :where conj [:service :wikibase/label
                            [[:bd/serviceParam :wikibase/language "[AUTO_LANGUAGE],en"]]])
       f/format-query
