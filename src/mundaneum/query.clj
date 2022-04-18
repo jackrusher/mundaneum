@@ -1,220 +1,180 @@
 (ns mundaneum.query
-  (:require [clj-time.core        :as ct]
-            [clj-time.format      :as cf]
-            [backtick             :refer [template]]
-            [mundaneum.properties :refer [properties]]))
+  (:require [backtick :refer [template]]
+            [clojure.data.json :as json]
+            [com.yetanalytics.flint :as f]
+            [hato.client :as http]
+            [mundaneum.properties :refer [wdt]]
+            [tick.core :as tick]))
 
-(def ^:dynamic *default-language* "en")
+(def ^:dynamic *default-language* :en)
 
-;; Need to make it easy to specify these:
-;;
-;; PREFIX wd: <http://www.wikidata.org/entity/>
-;; PREFIX wds: <http://www.wikidata.org/entity/statement/>
-;; PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-;; PREFIX wdv: <http://www.wikidata.org/value/>
-;; PREFIX wikibase: <http://wikiba.se/ontology#>
-;; PREFIX p: <http://www.wikidata.org/prop/>
-;; PREFIX ps: <http://www.wikidata.org/prop/statement/>
-;; PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
-;; PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-;; PREFIX bd: <http://www.bigdata.com/rdf#>
+(def prefixes
+  {:bd "<http://www.bigdata.com/rdf#>"
+   :p "<http://www.wikidata.org/prop/>"
+   :rdf "<http://www.w3.org/1999/02/22-rdf-syntax-ns#>"
+   :rdfs "<http://www.w3.org/2000/01/rdf-schema#>"
+   :wd "<http://www.wikidata.org/entity/>"
+   :wdt "<http://www.wikidata.org/prop/direct/>"
+   :wikibase "<http://wikiba.se/ontology#>"
+   :cc "<http://creativecommons.org/ns#>"
+   :dct "<http://purl.org/dc/terms/>"
+   :geo "<http://www.opengis.net/ont/geosparql#>"
+   :hint "<http://www.bigdata.com/queryHints#>"
+   :ontolex "<http://www.w3.org/ns/lemon/ontolex#>"
+   :owl "<http://www.w3.org/2002/07/owl#>"
+   :pq "<http://www.wikidata.org/prop/qualifier/>"
+   :pqn "<http://www.wikidata.org/prop/qualifier/value-normalized/>"
+   :pqv "<http://www.wikidata.org/prop/qualifier/value/>"
+   :pr "<http://www.wikidata.org/prop/reference/>"
+   :prn "<http://www.wikidata.org/prop/reference/value-normalized/>"
+   :prov "<http://www.w3.org/ns/prov#>"
+   :prv "<http://www.wikidata.org/prop/reference/value/>"
+   :ps "<http://www.wikidata.org/prop/statement/>"
+   :psn "<http://www.wikidata.org/prop/statement/value-normalized/>"
+   :psv "<http://www.wikidata.org/prop/statement/value/>"
+   :schema "<http://schema.org/>"
+   :skos "<http://www.w3.org/2004/02/skos/core#>"
+   :wdata "<http://www.wikidata.org/wiki/Special:EntityData/>"
+   :wdno "<http://www.wikidata.org/prop/novalue/>"
+   :wdref "<http://www.wikidata.org/reference/>"
+   :wds "<http://www.wikidata.org/entity/statement/>"
+   :wdtn "<http://www.wikidata.org/prop/direct-normalized/>"
+   :wdv "<http://www.wikidata.org/value/>"
+   :xsd "<http://www.w3.org/2001/XMLSchema#>"})
 
-(def wikidata
-  (.getConnection
-   (doto (org.eclipse.rdf4j.repository.sparql.SPARQLRepository.
-          "https://query.wikidata.org/sparql")
-     (.initialize))))
+(def uri->prefix
+  "Reverse lookup to turn result URIs into namespaced keywords."
+  (reduce (fn [m [k v]]
+            (assoc m
+                   (subs v 1 (dec (count v)))
+                   (str (name k))))
+          {}
+          prefixes))
 
-(defprotocol Clojurizable
-  (clojurize-value [this] (vector (class v) (.toString v))))
+(defn uri->keyword [pattern value]
+    (let [[_ base-uri trimmed-value] (re-find pattern value)]
+      (when-let [prefix (uri->prefix base-uri)]
+        (when value
+          (keyword (uri->prefix base-uri) trimmed-value)))))
 
-(extend-protocol Clojurizable
-  org.eclipse.rdf4j.model.impl.SimpleBNode
-  (clojurize-value [this] nil)
-  org.eclipse.rdf4j.model.impl.SimpleIRI
-  (clojurize-value [this] (.getLocalName this))
-  org.eclipse.rdf4j.model.impl.SimpleLiteral
-  (clojurize-value [this]
-    (if (= (.toString (.getDatatype this))
-           "http://www.w3.org/2001/XMLSchema#dateTime")
-      (cf/parse (.getLabel this))
-      (.getLabel this)))
-  org.wikidata.wdtk.datamodel.json.jackson.datavalues.JacksonValueString
-  (clojurize-value [this] (.getValue this))
-  org.wikidata.wdtk.datamodel.json.jackson.datavalues.JacksonValueItemId
-  (clojurize-value [this] (.getId this))
-  org.wikidata.wdtk.datamodel.json.jackson.datavalues.JacksonValueTime
-  (clojurize-value [this] (cf/parse (.getTime (.getValue this))))
-  org.wikidata.wdtk.datamodel.json.jackson.datavalues.JacksonValueQuantity
-  (clojurize-value [this] (.toString this)))
+(defn clojurize-values [result]
+  (into {} (map (fn [[k {:keys [type value datatype] :as v}]]
+                  [k (condp = type
+                       "uri" (or (uri->keyword #"(.*#)(.*)$" value)
+                                 (uri->keyword #"(.*/)([^/]*)$" value)
+                                 (:value v))
+                       "literal" (condp = datatype
+                                   "http://www.w3.org/2001/XMLSchema#decimal" (Float/parseFloat value)
+                                   "http://www.w3.org/2001/XMLSchema#integer" (Integer/parseInt value)
+                                   "http://www.w3.org/2001/XMLSchema#dateTime" (tick/instant value)
+                                   nil value
+                                   v)
+                       v)])
+                result)))
 
-(defn clojurize-results [results]
-  (mapv (fn [bindings]
-          (reduce #(assoc %1
-                          (keyword %2)
-                          (clojurize-value (.getValue bindings %2)))
-                  {}
-                  (.getBindingNames bindings)))
-        results))
+(defn do-query [sparql-text]
+  (mapv clojurize-values
+        (-> (http/get "https://query.wikidata.org/sparql"
+                      {:query-params {:query sparql-text
+                                      :format "json"}})
+            :body
+            (json/read-str :key-fn keyword)
+            :results
+            :bindings)))
 
-(defn do-query [conn sparql-string]
-  (->> (.prepareTupleQuery conn
-                           org.eclipse.rdf4j.query.QueryLanguage/SPARQL
-                           sparql-string)
-       (.evaluate)
-       (org.eclipse.rdf4j.query.QueryResults/asList)
-       (clojurize-results)))
+;; TODO should label service be optional? it should definitely use default-language
+(defn query [sparql-form]
+  (-> (merge {:prefixes prefixes} sparql-form)
+      (update :where conj [:service :wikibase/label
+                           [[:bd/serviceParam :wikibase/language "[AUTO_LANGUAGE],en"]]])
+      f/format-query
+      do-query))
 
-(defn property
-  "Helper function to look up one of the pre-spidered properties by keyword `p`."
-  [p]
-  (get mundaneum.properties/properties p))
+;; [(count ?p) ?n]
+;; TODO memoize by language, maybe switch to using:
+;; `wikibase:sitelinks ?sitelinks` for notoriety
+(defn entity
+  "Return a keyword like :wd/Q42 for the WikiData entity that best matches `label`."
+  [label & criteria]
+  (-> (template {:select [?item ?sitelinks]
+                  :where  [[?item :rdfs/label {:en ~label}] ; XXX add default lang support here
+                           [?item :wikibase/sitelinks ?sitelinks]
+                           ~@(mapv (fn [[p e]]
+                                     (template [?item ~p ~e]))
+                                   (partition 2 criteria))
+                           ;; no :instance-of / :subclass-of wikidata properties
+                           [:minus [[?item (cat (* :wdt/P31) (+ :wdt/P279)) :wd/Q18616576]]]]
+                  ;; choose the entity with the most properties
+                  :order-by [(desc ?sitelinks)]
+                 :limit 1})
+      query
+      first
+      clojurize-values
+      :item))
 
-(declare entity)
+(defn wdt->wd [arc]
+  (let [prefix (namespace arc)
+        id (name arc)]
+    (if (= prefix "wdt")
+      (keyword "wd" id)
+      arc)))
 
-;; TODO should be able to parameterize the automatic label language(s)
-(defn stringify-query
-  "Naive conversion of datastructure `q` to a SPARQL query string... fragile af."
-  [q]
-  (loop [q q out ""]
-    (if-let [token (first q)]
-      (recur (case token
-               :where    (drop 2 q)
-               :optional (drop 2 q)
-               :union    (drop 2 q)
-               :minus    (drop 2 q)
-               :filter   (drop 2 q)
-               :service  (drop 3 q)
-               (rest q))
-             (str out
-                  (cond
-                    (= :select token) "SELECT "
-                    (= :distinct token) "DISTINCT "
-                    (= :filter token) (str " FILTER ("
-                                           (stringify-query (second q))
-                                           ")\n")
-                    (= :where token) (str "\nWHERE {\n"
-                                          (stringify-query (second q))
-                                          ;; ;; always bring in the label service XXX breaks the new lexical queries!
-                                          " SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\" . }\n"
-                                          "}")
-                    (= :optional token) (str " OPTIONAL {\n"
-                                          (stringify-query (second q))
-                                          "}\n")
-                    (= :union token) (str " { "
-                                          (->> (map stringify-query (second q))
-                                               (interpose " } UNION { ")
-                                               (apply str))
-                                          "}\n")
-                    (= :minus token) (str " MINUS { "
-                                          (stringify-query (second q))
-                                          "}\n")
-                    (= :service token) (str "\nSERVICE "
-                                            (second q)
-                                            " {\n"
-                                            (stringify-query (nth q 2))
-                                            "}")
-                    (= :order-by token) "\nORDER BY "
-                    (= :group-by token) "\nGROUP BY "
-                    (= :limit token) "\nLIMIT "
-                    (= '_ token) " ; "
-                    (string? token) (str "\"" token "\"")
-                    (vector? token) (str (stringify-query token) " .\n")
-                    (list? token) (case (first token)
-                                    ;; an override for unimplemented features, &c
-                                    literal (str " " (second token))
-                                    ;; XXX super gross! move to something like (en "str") form
-                                    clojure.core/deref (str "@" (second token))
-                                    ;; TODO one of these for each namespace
-                                    entity  (if-let [e (binding [*ns* (the-ns 'mundaneum.query)]
-                                                         (eval token))]
-                                              (str " wd:" e)
-                                              (throw (Exception. (str "could not evaluate entity expression " (pr-str token)))))
-                                    p       (str " p:"   (property (second token)))
-                                    ps      (str " ps:"  (property (second token)))
-                                    pq      (str " pq:"  (property (second token)))
-                                    wd      (str " wd:"  (second token))
-                                    wdt     (str " wdt:" (property (second token)))
-                                    inverse (str "^" (second token))
-                                    desc    (str "DESC(" (second token) ")")
-                                    asc     (str "ASC("  (second token) ")")
-                                    year    (str "YEAR("  (second token) ")")
-                                    month   (str "YEAR("  (second token) ")")
-                                    lang    (str "LANG("  (second token) ")")
-                                    ;;                                    >       (str (second token) " > " (nth token 2))
-                                    now     " NOW()"
-                                    regex   (str "regex (" (second token) ", \"" (last token) "\")")
-                                    count   (str "(COUNT(" (second token) ") AS " (last token) ")")
-                                    sum     (str "(SUM(" (second token) ") AS " (last token) ")")
-                                    (throw (Exception. (str "unknown operator in SPARQL DSL: " (pr-str (first token))))))
-                    :else (str " " token " "))))
-      out)))
+;; TODO memoize by language
+(defn label
+  "Returns the label of the entity with `id`."
+  [id]
+  (->> (query
+        (template {:select [?label]
+                   :where  [[~(wdt->wd id) :rdfs/label ?label]
+                            [:filter (= (lang ?label) "en")]]}))
+       first
+       :label))
 
-(defn query
-  "Perform the query specified in `q` against the Wikidata SPARQL endpoint."
-  [q]
-  (do-query wikidata (stringify-query q)))
-
-;; TODO currently memoizes using the *default-language*, which means
-;; that multiple calls in different languages will continue to return
-;; the first result.
-(def entity
-  "Returns a WikiData entity whose entity's label resembles `label`. One can specity `criteria` in the form of :property/entity pairs to help select the right entity."
-  (memoize   
-   (fn [label & criteria]
-     (->> (query
-           (template [:select ?item (count ?p :as ?count)
-                      :where [[?item rdfs:label ~label @~*default-language*
-                               _ ?p ?whatever]
-                              ;; stitch in criteria, if supplied
-                              ~@(mapv (fn [[p e]]
-                                        (template
-                                         [?item
-                                          ~(symbol (str "wdt:" (property p)))
-                                          ~(symbol (str "wd:" e))]))
-                                      (partition 2 criteria))
-                              ;; no :instance-of / :subclass-of wikidata properties
-                              :minus [?item wdt:P31 / wdt:P279 + wd:Q18616576]]
-                      ;; choose the entity with the most properties
-                      :group-by ?item
-                      :order-by (desc ?count)
-                      :limit 1]))
-          first
-          :item))))
-
-;; TODO filter out Wiki disambiguation pages?
-;;:instance-of wd:Q4167410
-
-;; TODO currently memoizes using the *default-language*, which means
-;; that multiple calls in different languages will continue to return
-;; the first result.
-(def describe
+;; TODO memoize by language
+(defn describe
   "Returns the description of the entity with `id`."
-  (memoize
-   (fn [id]
-     (->> (query
-           (template [:select ?description
-                      :where [[~(symbol (str "wd:" id)) schema:description ?description]
-                              :filter ((lang ?description) = ~*default-language*)]]))
-          first
-          :description))))
-
-;; TODO currently memoizes using the *default-language*, which means
-;; that multiple calls in different languages will continue to return
-;; the first result.
-(def label
-  "Returns the description of the entity with `id`."
-  (memoize
-   (fn [id]
-     (->> (query
-           (template [:select *
-                      :where [[~(symbol (str "wd:" id)) rdfs:label ?label]
-                              :filter ((lang ?label) = ~*default-language*)]]))
-          first
-          :label))))
+  [id] 
+  (->> (query
+        (template {:select [?description]
+                   :where [[~(wdt->wd id) :schema/description ?description]
+                           [:filter (= (lang ?description) "en")]]}))
+       first
+       :description))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO FILTER expressions
-;; TODO BIND
-;; TODO ASK
+;; wdno = no value!
+#_(query '{:select [?human ?humanLabel]
+         :where [{?human {:wdt/P31 #{:wd/Q5}
+                          :rdf/type #{:wdno/P40}}}]
+         :limit 20})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; TODO places can be a 2D Point() for lat/lon, or have an entity ID
+;; prepended to indicate that the location is not on Earth. Not sure
+;; the nicest way to return that info.
+#_{:place :wd/Q25908808,
+  :loc
+  {:datatype "http://www.opengis.net/ont/geosparql#wktLiteral",
+   :type "literal",
+   :value
+   "<http://www.wikidata.org/entity/Q3123> Point(-351.1 -44.87)"}}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; more advanced query features
+
+#_(def query-2
+  '{:prefixes {:dc  "<http://purl.org/dc/elements/1.1/>"
+               :xsd "<http://www.w3.org/2001/XMLSchema#>"}
+    :select   [?title]
+    :from     ["<http://my-anime-rdf-graph.com>"]
+    :where    [[:union [{_b1 {:dc/title     #{{:en "Attack on Titan"}}
+                              :dc/publisher #{?publisher}}}]
+                       [{_b2 {:dc/title     #{{:jp "進撃の巨人"}}
+                              :dc/publisher #{?publisher}}}]]
+               {?work {:dc/publisher #{?publisher}
+                       :dc/title     #{?title}
+                       :dc/date      #{?date}}}
+               [:filter (<= #inst "2010-01-01T00:00:00Z" ?date)]]})
+

@@ -7,7 +7,7 @@
 ;; https://github.com/maxlath/wikibase-cli
 ;; ... example invocation:
 ;; $ wb props > props-2021-11-04.json
-(def properties
+(def wdt
   (->> (json/read (io/reader (io/resource "props-2021-11-04.json")))
        (reduce (fn [m [id text]]
                  (assoc m
@@ -15,6 +15,5 @@
                             (string/replace #"[ /]" "-")
                             (string/replace #"[\(\)\'\,]" "")
                             keyword)
-                        id))
+                        (keyword (str "wdt/" id))))
                {})))
-
