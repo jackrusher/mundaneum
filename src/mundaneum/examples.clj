@@ -277,6 +277,38 @@
    {:mentions 10, :zeitung "Bild"}]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; FEDERATED
+
+;; This query combines data from WikiData and WikiPathways to show
+;; interaction types for WP716 (Vitamin A and carotenoid metabolism in
+;; Homo sapiens).
+;;
+;; https://www.wikipathways.org/index.php/Pathway:WP716
+
+(->> (template {:prefixes {:dc "<http://purl.org/dc/elements/1.1/>"
+                           :wp "<http://vocabularies.wikipathways.org/wp#>"}
+                :select-distinct [?interaction_type]
+                :where [[:values {?wpid ["WP716"]}]
+                        [?item :wdt/P2410 ?wpid]
+                        [?item :wdt/P2888 ?source_pathway]
+                        [:service "<http://sparql.wikipathways.org/sparql>"
+                         [[?wp_pathway :dc/identifier ?source_pathway]
+                          {?s {:dct/isPartOf #{?wp_pathway ?interaction}}}
+                          [?interaction :rdf/type :wp/Interaction]
+                          [?interaction :rdf/type ?interaction_type]]]]
+                :limit 20})
+     query
+     (map :interaction_type))
+;;=>
+#_("http://vocabularies.wikipathways.org/wp#Catalysis"
+   "http://vocabularies.wikipathways.org/wp#TranscriptionTranslation"
+   "http://vocabularies.wikipathways.org/wp#Stimulation"
+   "http://vocabularies.wikipathways.org/wp#DirectedInteraction"
+   "http://vocabularies.wikipathways.org/wp#Interaction"
+   "http://vocabularies.wikipathways.org/wp#Inhibition"
+   "http://vocabularies.wikipathways.org/wp#Conversion")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; multiple language support (work ongoing) XXX
 
 ;; lookup an entity using Thai as the default language
@@ -288,3 +320,25 @@
 ;; (binding [mundaneum.query/*default-language* "th"]
 ;;   (describe (entity "ระยอง")))
 ;;=> "หน้าแก้ความกำกวมวิกิมีเดีย"
+
+;; TODO add as another example of Federated Query
+
+;; PREFIX lgdo: <http://linkedgeodata.org/ontology/>
+;; PREFIX geom: <http://geovocab.org/geometry#>
+;; PREFIX bif: <bif:>
+;; SELECT ?atm ?geometry ?bank ?bankLabel WHERE {
+;;   hint:Query hint:optimizer "None".  
+;;   SERVICE <http://linkedgeodata.org/sparql> {
+;;     { ?atm a lgdo:Bank; lgdo:atm true. }
+;;     UNION { ?atm a lgdo:Atm. }    
+;;     ?atm geom:geometry [geo:asWKT ?geometry];
+;;          lgdo:operator ?operator.
+;;     FILTER(bif:st_intersects(?geometry, bif:st_point(11.5746898, 48.1479876), 5)) # 5 km around Munich
+;;   }  
+;;   BIND(STRLANG(?operator, "de") as ?bankLabel) 
+;;   ?bank rdfs:label ?bankLabel.
+;;   # bank is part of the Bankcard service network, either via an explicit statement or implicitly due to its legal form (unless explicitly excluded)
+;;   { ?bank wdt:P527 wd:Q806724. }
+;;   UNION { ?bank wdt:P1454 wd:Q5349747. }
+;;   MINUS { wd:Q806724 wdt:P3113 ?bank. }
+;; }
