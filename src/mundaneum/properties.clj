@@ -8,12 +8,12 @@
 ;; ... example invocation:
 ;; $ wb props > props-2021-11-04.json
 (def wdt
-  (->> (json/read (io/reader (io/resource "props-2021-11-04.json")))
+  (->> (json/read (io/reader (io/resource "props-2022-04-19.json")))
        (reduce (fn [m [id text]]
                  (assoc m
                         (-> text
                             (string/replace #"[ /]" "-")
-                            (string/replace #"[\(\)\'\,]" "")
+                            (string/replace #"[\(\)\'\,;\"]" "")
                             keyword)
                         (keyword (str "wdt/" id))))
                {})))
