@@ -5,6 +5,8 @@
             [mundaneum.properties :refer [wdt]]
             [tick.core :as tick]))
 
+;; TODO several of the downstream functions should probably have two
+;; arities so one can do things like (entity :es "churro").
 (def ^:dynamic *default-language* (atom :en))
 
 (defn default-language

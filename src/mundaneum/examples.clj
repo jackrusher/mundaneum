@@ -26,69 +26,16 @@
 (wdt :instance-of)
 ;;=> :wdt/P31
 
-;; ... which we use in the `query` function to make it easier to write
-;; queries from the REPL. For example, we can ask which things contain
-;; an administrative territory and get a list of the pairs filtered to
-;; the situation where the container is Ireland, and we can specify
-;; that we want those labels in the Irish language.
-
-(binding [*default-language* :ga]
-  (->> (query `{:select [?areaLabel]
-                :where [[~(entity "Republic of Ireland")
-                         ~(wdt :contains-administrative-territorial-entity)
-                         ?area]]
-                :limit 50})
-       (map :areaLabel)))
-#_("Contae Laoise"
-   "Cúige Uladh"
-   "Contae Liatroma"
-   "Cúige Mumhan"
-   "Cúige Laighean"
-   "Contae Chorcaí"
-   "Cúige Chonnacht"
-   "Contae na Gaillimhe"
-   "Contae Chill Dara"
-   "Contae Bhaile Átha Cliath"
-   "Contae Luimnigh"
-   "Contae Mhaigh Eo"
-   "Contae Shligigh"
-   "Contae Dhún na nGall"
-   "Contae Ros Comáin"
-   "Contae Chill Chainnigh"
-   "Contae an Chláir"
-   "Contae Cheatharlach"
-   "Contae Chill Mhantáin"
-   "Contae na hIarmhí"
-   "Contae Lú"
-   "Contae na Mí"
-   "Contae Uíbh Fhailí"
-   "Contae Chiarraí"
-   "Contae Phort Láirge"
-   "Contae Loch Garman"
-   "Contae Thiobraid Árann"
-   "Contae Mhuineacháin"
-   "Contae an Longfoirt"
-   "Contae an Chabháin")
-
-;; Discoveries/inventions grouped by person on the clojure side,
+;; These helpers made it easier to write queries from the REPL. For
+;; example, this one that looks for people who have discovered or
+;; invented things.
 (->> (query
       `{:select [?thingLabel ?whomLabel]
         :where [[?thing ~(wdt :discoverer-or-inventor) ?whom]]
         :limit 100})
      (group-by :whomLabel)
      (reduce #(assoc %1 (first %2) (mapv :thingLabel (second %2))) {}))
-
-;; eye color popularity, grouping and counting as part of the query
-(query `{:select [?eyeColorLabel [(count ?person) ?count]]
-         :where [[?person ~(wdt :eye-color) ?eyeColor]]
-         :group-by [?eyeColorLabel]
-         :order-by [(desc ?count)]})
  
-;; U7 stations in Berlin w/ geo coords
-(query `{:select [?stationLabel ?coord]
-         :where [[?station ~(wdt :connecting-line) ~(entity "U7" (wdt :part-of) (entity "Berlin U-Bahn"))]
-                 [?station ~(wdt :coordinate-location) ?coord]]})
-
 ;; born in ancient Rome or territories thereof
 (->> (query `{:select [?itemLabel]
               :where [[?item ~(wdt :place-of-birth) ?pob]
@@ -97,6 +44,20 @@
      (map :itemLabel)
      (into #{}))
 ;;=> #{"Marcus Furius Camillus" "Avianus" "Porcia Catonis" "Faustina the Elder" "Hippolytus" "Sylvester I" "Lucius Caecilius Metellus Denter" "Lucius Junius Brutus" "Gaius Valarius Sabinus" "Publius Petronius Turpilianus"}
+
+;; Some data comes with geo coords that can be plotted on a map. For
+;; example, here are the metro stations on the U7 like in Berlin, with
+;; locations:
+(query `{:select [?stationLabel ?coord]
+         :where [[?station ~(wdt :connecting-line) ~(entity "U7" (wdt :part-of) (entity "Berlin U-Bahn"))]
+                 [?station ~(wdt :coordinate-location) ?coord]]})
+
+;; Queries also support aggregates, like count. Here is a query for
+;; eye color frequency using count, group-by, and order-by:
+(query `{:select [?eyeColorLabel [(count ?person) ?count]]
+         :where [[?person ~(wdt :eye-color) ?eyeColor]]
+         :group-by [?eyeColorLabel]
+         :order-by [(desc ?count)]})
 
 ;; A query to show what places in Germany have names that end in
 ;; -ow/-itz (indicating that they were historically Slavic). Notice
@@ -379,3 +340,42 @@
   (str thai-name " is called " (label id) " in English."))
 ;;=> "กรุงเทพมหานคร is called Bangkok in English."
 
+;; Here we ask for administrative territories of Ireland, with results
+;; in the Irish language.
+(binding [*default-language* :ga]
+  (->> (query `{:select [?areaLabel]
+                :where [[~(entity "Republic of Ireland")
+                         ~(wdt :contains-administrative-territorial-entity)
+                         ?area]]
+                :limit 50})
+       (map :areaLabel)))
+#_("Contae Laoise"
+   "Cúige Uladh"
+   "Contae Liatroma"
+   "Cúige Mumhan"
+   "Cúige Laighean"
+   "Contae Chorcaí"
+   "Cúige Chonnacht"
+   "Contae na Gaillimhe"
+   "Contae Chill Dara"
+   "Contae Bhaile Átha Cliath"
+   "Contae Luimnigh"
+   "Contae Mhaigh Eo"
+   "Contae Shligigh"
+   "Contae Dhún na nGall"
+   "Contae Ros Comáin"
+   "Contae Chill Chainnigh"
+   "Contae an Chláir"
+   "Contae Cheatharlach"
+   "Contae Chill Mhantáin"
+   "Contae na hIarmhí"
+   "Contae Lú"
+   "Contae na Mí"
+   "Contae Uíbh Fhailí"
+   "Contae Chiarraí"
+   "Contae Phort Láirge"
+   "Contae Loch Garman"
+   "Contae Thiobraid Árann"
+   "Contae Mhuineacháin"
+   "Contae an Longfoirt"
+   "Contae an Chabháin")
