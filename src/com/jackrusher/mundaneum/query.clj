@@ -1,8 +1,8 @@
-(ns mundaneum.query
+(ns com.jackrusher.mundaneum.query
   (:require [clojure.data.json :as json]
+            [com.jackrusher.mundaneum.properties :refer [wdt]]
             [com.yetanalytics.flint :as f]
             [hato.client :as http]
-            [mundaneum.properties :refer [wdt]]
             [tick.core :as tick]))
 
 ;; TODO several of the downstream functions should probably have two

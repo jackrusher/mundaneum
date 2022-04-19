@@ -1,6 +1,6 @@
-(ns mundaneum.examples
-  (:require [mundaneum.query      :refer [describe entity label query *default-language*]]
-            [mundaneum.properties :refer [wdt]]))
+(ns com.jackrusher.mundaneum.examples
+  (:require [com.jackrusher.mundaneum.query      :refer [describe entity label query *default-language*]]
+            [com.jackrusher.mundaneum.properties :refer [wdt]]))
 
 ;; To understand what's happening here, it would be a good idea to
 ;; read through this document:
@@ -43,7 +43,9 @@
               :limit 10})
      (map :itemLabel)
      (into #{}))
-;;=> #{"Marcus Furius Camillus" "Avianus" "Porcia Catonis" "Faustina the Elder" "Hippolytus" "Sylvester I" "Lucius Caecilius Metellus Denter" "Lucius Junius Brutus" "Gaius Valarius Sabinus" "Publius Petronius Turpilianus"}
+#_ #{"Marcus Furius Camillus" "Avianus" "Porcia Catonis" "Faustina the Elder"
+     "Hippolytus" "Sylvester I" "Lucius Caecilius Metellus Denter"
+     "Lucius Junius Brutus" "Gaius Valarius Sabinus" "Publius Petronius Turpilianus"}
 
 ;; Some data comes with geo coords that can be plotted on a map. For
 ;; example, here are the metro stations on the U7 like in Berlin, with
@@ -61,7 +63,7 @@
 
 ;; A query to show what places in Germany have names that end in
 ;; -ow/-itz (indicating that they were historically Slavic). Notice
-;; that the `:where` clause is written differently here, using nexted
+;; that the `:where` clause is written differently here, using nested
 ;; maps and sets. This is a shorthand form for when you have many
 ;; constraints on a single entity.
 (query `{:select *
@@ -330,21 +332,14 @@
    "Noradrenaline")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; multiple language support
+;; Multiple language support
 
-;; lookup an entity using Thai as the default language, then get the
-;; English label for it.
-(let [thai-name "กรุงเทพมหานคร"
-      id (binding [*default-language* :th]
-           (entity thai-name))]
-  (str thai-name " is called " (label id) " in English."))
-;;=> "กรุงเทพมหานคร is called Bangkok in English."
-
-;; Here we ask for administrative territories of Ireland, with results
+;; Here we ask for administrative territories in the Republic of
+;; Ireland using the Irish name for the country and receiving results
 ;; in the Irish language.
 (binding [*default-language* :ga]
   (->> (query `{:select [?areaLabel]
-                :where [[~(entity "Republic of Ireland")
+                :where [[~(entity "Éire")
                          ~(wdt :contains-administrative-territorial-entity)
                          ?area]]
                 :limit 50})
@@ -379,3 +374,12 @@
    "Contae Mhuineacháin"
    "Contae an Longfoirt"
    "Contae an Chabháin")
+
+;; lookup an entity using Thai as the default language, then get the
+;; English label for it.
+(let [thai-name "กรุงเทพมหานคร"
+      id (binding [*default-language* :th]
+           (entity thai-name))]
+  (str thai-name " is called " (label id) " in English."))
+;;=> "กรุงเทพมหานคร is called Bangkok in English."
+
