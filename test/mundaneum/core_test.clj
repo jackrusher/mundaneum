@@ -17,7 +17,7 @@
     (is (= (describe (entity "U2" (wdt :part-of) (entity "Berlin U-Bahn")))
            "underground line in Berlin")))
 
-  (testing "Multilingual support"
+  (testing "Multilingual support with binding"
     ;; get the WikiData ID for "martinet noir" using the French language
     (let [id (binding [*default-language* :fr]
                (entity "martinet noir"))]
@@ -32,7 +32,17 @@
       ;; What is the (rather boring) description in Spanish?
       (is (= (binding [*default-language* :es]
                (describe id))
-             "especie de ave")))))
+             "especie de ave"))))
+
+  (testing "Multilingual support with an argument"
+    ;; get the WikiData ID for "Mensch" using the German language
+    (let [mensch (entity {:de "Mensch"})]
+      ;; check the multilingual ID
+      (is (= :wd/Q5 mensch))
+      (is (= (label :de mensch) "Mensch"))
+      (is (= (label :en mensch) "human"))
+      (is (= (describe :fr mensch)
+             "individu appartenant à l’espèce Homo sapiens, la seule espèce restante du genre Homo – distinct de « humain fictif » et de « humain possiblement fictif »")))))
 
 (deftest queries
   (testing "Example queries"

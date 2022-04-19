@@ -107,11 +107,11 @@
            :else e))
    sparql-form))
 
-;; TODO should label service be optional? it should definitely use default-language
+;; TODO should label service be optional?
 (defn query
   ([sparql-form]
-   (query sparql-form {}))
-  ([sparql-form opts]
+   (query {} sparql-form))
+  ([opts sparql-form]
    (-> sparql-form
        clean-up-symbols-and-seqs
        (update :prefixes merge prefixes)
@@ -120,25 +120,33 @@
        f/format-query
        do-query)))
 
-;; TODO memoize by language, maybe switch to using:
-;; `wikibase:sitelinks ?sitelinks` for notoriety
+(def entity*
+  "Memoized implementation of language-aware entity lookup."
+  (memoize
+   (fn [lang label criteria]
+     (-> `{:select [?item ?sitelinks]
+           :where  [[?item :rdfs/label {~lang ~label}]
+                    [?item :wikibase/sitelinks ?sitelinks]
+                    ~@(mapv (fn [[p e]] `[?item ~p ~e])
+                            (partition 2 criteria))
+                    ;; no :instance-of / :subclass-of wikidata properties
+                    ;; and no disambiguation pages
+                    [:minus [[?item (cat (* :wdt/P31) (+ :wdt/P279)) :wd/Q18616576]
+                             [?item :wdt/P31 :wd/Q4167410]]]]
+           ;; choose the entity with the most sitelinks on Wikipedia 
+           :order-by [(desc ?sitelinks)]
+           :limit 1}
+         query
+         first
+         :item))))
+
 (defn entity
-  "Return a keyword like :wd/Q42 for the WikiData entity that best matches `label`."
+  "Return a keyword like :wd/Q42 for the most popular WikiData entity that matches `label`."
   [label & criteria]
-  (-> `{:select [?item ?sitelinks]
-        :where  [[?item :rdfs/label {~(default-language) ~label}] ; XXX add default lang support here
-                 [?item :wikibase/sitelinks ?sitelinks]
-                 ~@(mapv (fn [[p e]] `[?item ~p ~e])
-                         (partition 2 criteria))
-                 ;; no :instance-of / :subclass-of wikidata properties
-                 [:minus [[?item (cat (* :wdt/P31) (+ :wdt/P279)) :wd/Q18616576]]]]
-        ;; choose the entity with the most properties
-        :order-by [(desc ?sitelinks)]
-        :limit 1}
-      query
-      first
-      clojurize-values
-      :item))
+  (let [[lang label'] (if (map? label)
+                        (first label)
+                        [(default-language) label])]
+    (entity* lang label' criteria)))
 
 (defn wdt->wd [arc]
   (let [prefix (namespace arc)
@@ -147,27 +155,37 @@
       (keyword "wd" id)
       arc)))
 
-;; TODO memoize by language
-(defn label
-  "Returns the label of the entity with `id`."
-  [id]
-  (->> `{:select [?label]
-         :where  [[~(wdt->wd id) :rdfs/label ?label]
-                  [:filter (= (lang ?label) ~(name (default-language)))]]}
-       query
-       first
-       :label))
+(def label*
+  "Memoized implementation of language-aware label lookup."
+  (memoize
+   (fn [lang id]
+     (->> `{:select [?label]
+            :where  [[~(wdt->wd id) :rdfs/label ?label]
+                     [:filter (= (lang ?label) ~(name lang))]]}
+          query
+          first
+          :label))))
 
-;; TODO memoize by language
+(defn label
+  "Returns the label of the entity with `id`. If `lang` is specified it, overrides `*default-language*`."
+  ([id] (label* (default-language) id))
+  ([lang id] (label* lang id)))
+
+(def describe*
+  "Memoized implementation of language-aware description lookup."
+  (memoize
+   (fn [lang id]
+     (->> `{:select [?description]
+            :where [[~(wdt->wd id) :schema/description ?description]
+                    [:filter (= (lang ?description) ~(name lang))]]}
+          query
+          first
+          :description))))
+
 (defn describe
-  "Returns the description of the entity with `id`."
-  [id] 
-  (->> `{:select [?description]
-         :where [[~(wdt->wd id) :schema/description ?description]
-                 [:filter (= (lang ?description)  ~(name (default-language)))]]}
-       query
-       first
-       :description))
+  "Returns the description of the entity with `id`. If `lang` is specified it, overrides `*default-language*`."
+  ([id] (describe* (default-language) id))
+  ([lang id] (describe* lang id)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

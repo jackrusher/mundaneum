@@ -118,11 +118,36 @@ translate to the DSL used here.
 
 ## Multilingual support
 
-The dynamic variable `mundaneum.query/*default-language*` is an `atom`
-containing an ISO language code keyword like `:en` that controls which
-language will be used by default for labels and description
-input/output. If you are planning to enjoy an interactive session in
-French you could set the default like this:
+In queries, a language-specific string can be specified with a map
+containing an ISO language code keyword as key and a string as value,
+like `{:en "human"}`. This can also be used to specify the language to
+use for an entity lookup:
+
+``` clojure
+(entity {:de "Mensch"})
+;;=> :wd/Q5
+```
+
+The `label` and `describe` functions can also take an extra first
+parameter indicating the language to use:
+
+``` clojure
+(label :de :wd/Q5)
+;;=> "Mensch"
+(describe :fr :wd/Q5)
+;;=> "individu appartenant à l’espèce Homo sapiens, la seule espèce restante du genre Homo – distinct de « humain fictif » et de « humain possiblement fictif »"
+```
+
+Note that these calls are all memoized _per language_, so repeatedly
+looking up a given entity/label/description causes no additional
+network traffic.
+
+In addition to these affordances, there is also a dynamic variable
+`mundaneum.query/*default-language*` which is an `atom` containing an
+ISO language code keyword like `:en` that controls which language will
+be used _by default_ for labels and description input/output. If you
+are planning to enjoy an interactive session in French you could set
+the default like this:
 
 ``` clojure
 (reset! *default-language* :fr)
@@ -139,6 +164,14 @@ local binding like this:
            (entity thai-name))]
   (str thai-name " is called " (label id) " in English."))
 ;;=> "กรุงเทพมหานคร is called Bangkok in English."
+```
+
+Although if one is doing something like this, it's probably nicer to
+use the previously described API:
+
+``` clojure
+(describe (entity {:th "กรุงเทพมหานคร"}))
+"capital of Thailand"
 ```
 
 ## Learn more
