@@ -1,6 +1,5 @@
 {:paths ["src" "resources"]
- :deps {backtick/backtick     {:mvn/version "0.3.4"}
-        com.yetanalytics/flint {:mvn/version "0.1.2"
+ :deps {com.yetanalytics/flint {:mvn/version "0.1.2"
                                 :exclusions [org.clojure/clojure
                                              org.clojure/clojurescript]}
         hato/hato {:mvn/version "0.8.2"}
