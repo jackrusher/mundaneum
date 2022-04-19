@@ -1,14 +1,21 @@
 (ns mundaneum.query
-  (:require [backtick :refer [template]]
-            [clojure.data.json :as json]
+  (:require [clojure.data.json :as json]
             [com.yetanalytics.flint :as f]
             [hato.client :as http]
             [mundaneum.properties :refer [wdt]]
             [tick.core :as tick]))
 
-(def ^:dynamic *default-language* :en)
+(def ^:dynamic *default-language* (atom :en))
+
+(defn default-language
+  "Returns the unwrapped value of the in-scope binding of `*default-language*`, which can be an atom containing a keyword representing the current default language (like `:en`) or an atom containing such a keyword."
+  []
+  (if (instance? clojure.lang.IDeref *default-language*)
+    (deref *default-language*)
+    *default-language*))
 
 (def prefixes
+  "RDF prefixes automatically supported by the WikiData query service."
   {:bd "<http://www.bigdata.com/rdf#>"
    :cc "<http://creativecommons.org/ns#>"
    :dct "<http://purl.org/dc/terms/>"
@@ -43,7 +50,7 @@
    :xsd "<http://www.w3.org/2001/XMLSchema#>"})
 
 (def uri->prefix
-  "Reverse lookup to turn result URIs into namespaced keywords."
+  "Reverse lookup table from RDF namespace url to prefix name. Used by `uri->keyword`."
   (reduce (fn [m [k v]]
             (assoc m
                    (subs v 1 (dec (count v)))
@@ -51,13 +58,17 @@
           {}
           prefixes))
 
-(defn uri->keyword [pattern value]
-    (let [[_ base-uri trimmed-value] (re-find pattern value)]
+(defn uri->keyword
+  "Use regex `pattern` to extract the base and final portions of `uri` and convert them into a namespaced keyword. Returns nil if the pattern match is not successful."
+  [pattern uri]
+    (let [[_ base-uri trimmed-value] (re-find pattern uri)]
       (when-let [prefix (uri->prefix base-uri)]
-        (when value
+        (when trimmed-value
           (keyword (uri->prefix base-uri) trimmed-value)))))
 
-(defn clojurize-values [result]
+(defn clojurize-values
+  "Convert the values in `result` to Clojure types."
+  [result]
   (into {} (map (fn [[k {:keys [type value datatype] :as v}]]
                   [k (condp = type
                        "uri" (or (uri->keyword #"(.*#)(.*)$" value)
@@ -67,12 +78,14 @@
                                    "http://www.w3.org/2001/XMLSchema#decimal" (Float/parseFloat value)
                                    "http://www.w3.org/2001/XMLSchema#integer" (Integer/parseInt value)
                                    "http://www.w3.org/2001/XMLSchema#dateTime" (tick/instant value)
-                                   nil value
-                                   v)
-                       v)])
+                                   nil value ; no datatype, return literal as is
+                                   v) ; unknown datatype, return whole value map
+                       v)]) ; unknown value type, return whole value map
                 result)))
 
-(defn do-query [sparql-text]
+(defn do-query
+  "Query the WikiData endpoint with the SPARQL query in `sparql-text` and convert the return into Clojure data structures."
+  [sparql-text]
   (mapv clojurize-values
         (-> (http/get "https://query.wikidata.org/sparql"
                       {:query-params {:query sparql-text
@@ -82,32 +95,44 @@
             :results
             :bindings)))
 
-;; TODO should label service be optional? it should definitely use default-language
-(defn query [sparql-form]
-  (-> sparql-form
-      (update :prefixes merge prefixes )
-      (update :where conj [:service :wikibase/label
-                           [[:bd/serviceParam :wikibase/language "[AUTO_LANGUAGE],en"]]])
-      f/format-query
-      do-query))
+(defn clean-up-symbols-and-seqs
+  "Remove the namespace portion of namespaced symbols in `sparql-form`. We need to do this because clojure's backtick automatically interns symbols in the current namespace, but the SPARQL DSL wants unnamespaced symbols. Likewise, convert LazySeqs to proper Lists for the benefit of Flint's error checking."
+  [sparql-form]
+  (clojure.walk/postwalk
+   (fn [e]
+     (cond (symbol? e) (symbol (name e))
+           (seq? e) (apply list e)
+           :else e))
+   sparql-form))
 
-;; [(count ?p) ?n]
+;; TODO should label service be optional? it should definitely use default-language
+(defn query
+  ([sparql-form]
+   (query sparql-form {}))
+  ([sparql-form opts]
+   (-> sparql-form
+       clean-up-symbols-and-seqs
+       (update :prefixes merge prefixes)
+       (update :where conj [:service :wikibase/label
+                            [[:bd/serviceParam :wikibase/language (str "[AUTO_LANGUAGE]," (name (default-language)))]]])
+       f/format-query
+       do-query)))
+
 ;; TODO memoize by language, maybe switch to using:
 ;; `wikibase:sitelinks ?sitelinks` for notoriety
 (defn entity
   "Return a keyword like :wd/Q42 for the WikiData entity that best matches `label`."
   [label & criteria]
-  (-> (template {:select [?item ?sitelinks]
-                  :where  [[?item :rdfs/label {:en ~label}] ; XXX add default lang support here
-                           [?item :wikibase/sitelinks ?sitelinks]
-                           ~@(mapv (fn [[p e]]
-                                     (template [?item ~p ~e]))
-                                   (partition 2 criteria))
-                           ;; no :instance-of / :subclass-of wikidata properties
-                           [:minus [[?item (cat (* :wdt/P31) (+ :wdt/P279)) :wd/Q18616576]]]]
-                  ;; choose the entity with the most properties
-                  :order-by [(desc ?sitelinks)]
-                 :limit 1})
+  (-> `{:select [?item ?sitelinks]
+        :where  [[?item :rdfs/label {~(default-language) ~label}] ; XXX add default lang support here
+                 [?item :wikibase/sitelinks ?sitelinks]
+                 ~@(mapv (fn [[p e]] `[?item ~p ~e])
+                         (partition 2 criteria))
+                 ;; no :instance-of / :subclass-of wikidata properties
+                 [:minus [[?item (cat (* :wdt/P31) (+ :wdt/P279)) :wd/Q18616576]]]]
+        ;; choose the entity with the most properties
+        :order-by [(desc ?sitelinks)]
+        :limit 1}
       query
       first
       clojurize-values
@@ -124,10 +149,10 @@
 (defn label
   "Returns the label of the entity with `id`."
   [id]
-  (->> (query
-        (template {:select [?label]
-                   :where  [[~(wdt->wd id) :rdfs/label ?label]
-                            [:filter (= (lang ?label) "en")]]}))
+  (->> `{:select [?label]
+         :where  [[~(wdt->wd id) :rdfs/label ?label]
+                  [:filter (= (lang ?label) ~(name (default-language)))]]}
+       query
        first
        :label))
 
@@ -135,10 +160,10 @@
 (defn describe
   "Returns the description of the entity with `id`."
   [id] 
-  (->> (query
-        (template {:select [?description]
-                   :where [[~(wdt->wd id) :schema/description ?description]
-                           [:filter (= (lang ?description) "en")]]}))
+  (->> `{:select [?description]
+         :where [[~(wdt->wd id) :schema/description ?description]
+                 [:filter (= (lang ?description)  ~(name (default-language)))]]}
+       query
        first
        :description))
 

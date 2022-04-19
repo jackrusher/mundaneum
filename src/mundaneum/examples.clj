@@ -1,7 +1,6 @@
 (ns mundaneum.examples
   (:require [mundaneum.query      :refer [describe entity label query *default-language*]]
-            [mundaneum.properties :refer [wdt]]
-            [backtick             :refer [template]]))
+            [mundaneum.properties :refer [wdt]]))
 
 ;; To understand what's happening here, it would be a good idea to
 ;; read through this document:
@@ -30,41 +29,71 @@
 ;; ... which we use in the `query` function to make it easier to write
 ;; queries from the REPL. For example, we can ask which things contain
 ;; an administrative territory and get a list of the pairs filtered to
-;; the situation where the container is Ireland
-(query
- (template {:select [?areaLabel]
-            :where [[~(entity "Republic of Ireland")
-                     ~(wdt :contains-administrative-territorial-entity)
-                     ?area]]
-            :limit 50}))
+;; the situation where the container is Ireland, and we can specify
+;; that we want those labels in the Irish language.
+
+(binding [*default-language* :ga]
+  (->> (query `{:select [?areaLabel]
+                :where [[~(entity "Republic of Ireland")
+                         ~(wdt :contains-administrative-territorial-entity)
+                         ?area]]
+                :limit 50})
+       (map :areaLabel)))
+#_("Contae Laoise"
+   "Cúige Uladh"
+   "Contae Liatroma"
+   "Cúige Mumhan"
+   "Cúige Laighean"
+   "Contae Chorcaí"
+   "Cúige Chonnacht"
+   "Contae na Gaillimhe"
+   "Contae Chill Dara"
+   "Contae Bhaile Átha Cliath"
+   "Contae Luimnigh"
+   "Contae Mhaigh Eo"
+   "Contae Shligigh"
+   "Contae Dhún na nGall"
+   "Contae Ros Comáin"
+   "Contae Chill Chainnigh"
+   "Contae an Chláir"
+   "Contae Cheatharlach"
+   "Contae Chill Mhantáin"
+   "Contae na hIarmhí"
+   "Contae Lú"
+   "Contae na Mí"
+   "Contae Uíbh Fhailí"
+   "Contae Chiarraí"
+   "Contae Phort Láirge"
+   "Contae Loch Garman"
+   "Contae Thiobraid Árann"
+   "Contae Mhuineacháin"
+   "Contae an Longfoirt"
+   "Contae an Chabháin")
 
 ;; Discoveries/inventions grouped by person on the clojure side,
 (->> (query
-      (template {:select [?thingLabel ?whomLabel]
-                 :where [[?thing ~(wdt :discoverer-or-inventor) ?whom]]
-                 :limit 100}))
+      `{:select [?thingLabel ?whomLabel]
+        :where [[?thing ~(wdt :discoverer-or-inventor) ?whom]]
+        :limit 100})
      (group-by :whomLabel)
      (reduce #(assoc %1 (first %2) (mapv :thingLabel (second %2))) {}))
 
 ;; eye color popularity, grouping and counting as part of the query
-(query (template {:select [?eyeColorLabel [(count ?person) ?count]]
-                  :where [[?person ~(wdt :eye-color) ?eyeColor]]
-                  :group-by [?eyeColorLabel]
-                  :order-by [(desc ?count)]}))
-
+(query `{:select [?eyeColorLabel [(count ?person) ?count]]
+         :where [[?person ~(wdt :eye-color) ?eyeColor]]
+         :group-by [?eyeColorLabel]
+         :order-by [(desc ?count)]})
+ 
 ;; U7 stations in Berlin w/ geo coords
-(query (template
-        {:select [?stationLabel ?coord]
+(query `{:select [?stationLabel ?coord]
          :where [[?station ~(wdt :connecting-line) ~(entity "U7" (wdt :part-of) (entity "Berlin U-Bahn"))]
-                 [?station ~(wdt :coordinate-location) ?coord]]}))
+                 [?station ~(wdt :coordinate-location) ?coord]]})
 
 ;; born in ancient Rome or territories thereof
-(->> (query
-      (template
-       {:select [?itemLabel]
-        :where [[?item ~(wdt :place-of-birth) ?pob]
-                [?pob (* ~(wdt :located-in-the-administrative-territorial-entity)) ~(entity "Ancient Rome")]]
-        :limit 10}))
+(->> (query `{:select [?itemLabel]
+              :where [[?item ~(wdt :place-of-birth) ?pob]
+                      [?pob (* ~(wdt :located-in-the-administrative-territorial-entity)) ~(entity "Ancient Rome")]]
+              :limit 10})
      (map :itemLabel)
      (into #{}))
 ;;=> #{"Marcus Furius Camillus" "Avianus" "Porcia Catonis" "Faustina the Elder" "Hippolytus" "Sylvester I" "Lucius Caecilius Metellus Denter" "Lucius Junius Brutus" "Gaius Valarius Sabinus" "Publius Petronius Turpilianus"}
@@ -74,16 +103,14 @@
 ;; that the `:where` clause is written differently here, using nexted
 ;; maps and sets. This is a shorthand form for when you have many
 ;; constraints on a single entity.
-(query
- (template
-  {:select *
-   :where [{?ort {(cat ~(wdt :instance-of) (* ~(wdt :subclass-of))) #{~(entity "human settlement")}
-                  ~(wdt :country) #{~(entity "Germany")}
-                  :rdfs/label #{?name}
-                  ~(wdt :coordinate-location) #{?wo}}}
-           [:filter (= (lang ?name) "de")]
-           [:filter (regex ?name "(ow|itz)$")]]
-   :limit 5}))
+(query `{:select *
+         :where [{?ort {(cat ~(wdt :instance-of) (* ~(wdt :subclass-of))) #{~(entity "human settlement")}
+                        ~(wdt :country) #{~(entity "Germany")}
+                        :rdfs/label #{?name}
+                        ~(wdt :coordinate-location) #{?wo}}}
+                 [:filter (= (lang ?name) "de")]
+                 [:filter (regex ?name "(ow|itz)$")]]
+         :limit 5})
 ;;=>
 #_[{:ort :wd/Q6448,
     :wo
@@ -118,13 +145,13 @@
 
 ;; WikiData is multilingual! Here's a query to list species of Swift
 ;; (the bird) with their English and German (and often Latin) names
-(query (template {:select [?englishName ?germanName]
-                  :where [[?bird ~(wdt :parent-taxon) ~(entity "Apodiformes")]
-                          [?bird :rdfs/label ?germanName]
-                          [?bird :rdfs/label ?englishName]
-                          [:filter (= (lang ?germanName) "de")]
-                          [:filter (= (lang ?englishName) "en")]]
-                  :limit 10}))
+(query `{:select [?englishName ?germanName]
+         :where [[?bird ~(wdt :parent-taxon) ~(entity "Apodiformes")]
+                 [?bird :rdfs/label ?germanName]
+                 [?bird :rdfs/label ?englishName]
+                 [:filter (= (lang ?germanName) "de")]
+                 [:filter (= (lang ?englishName) "en")]]
+         :limit 10})
 ;;=>
 ;; [{:germanName "Jungornithidae", :englishName "Jungornithidae"}
 ;;  {:germanName "Eocypselus", :englishName "Eocypselus"}
@@ -140,10 +167,9 @@
 (defn make-analogy
   "Return known analogies for the form `a1` is to `a2` as `b1` is to ???"
   [a1 a2 b1]
-  (->> (query
-        (template {:select [?isto ?analogyLabel]
-                   :where [[~a1 ?isto ~a2]
-                           [~b1 ?isto ?analogy]]}))
+  (->> (query `{:select [?isto ?analogyLabel]
+                :where [[~a1 ?isto ~a2]
+                        [~b1 ?isto ?analogy]]})
        (map #(let [arc (label (:isto %))]
                (str (label a1)
                     " is <" arc "> to "
@@ -161,13 +187,13 @@
 ;;=> ("The Beatles is <genre> to rock and roll as Miles Davis is <genre> to jazz")
 
 ;; Airports within 150km of Paris, use "around" service
-(->> (template {:select-distinct [?placeLabel] 
-                :where [[~(entity "Paris") ~(wdt :coordinate-location) ?parisLoc]
-                        [?place ~(wdt :instance-of) ~(entity "airport")]
-                        [:service :wikibase/around
-                         [[?place ~(wdt :coordinate-location) ?location]
-                          [:bd/serviceParam :wikibase/center ?parisLoc]
-                          [:bd/serviceParam :wikibase/radius "150"]]]]})
+(->> `{:select-distinct [?placeLabel] 
+       :where [[~(entity "Paris") ~(wdt :coordinate-location) ?parisLoc]
+               [?place ~(wdt :instance-of) ~(entity "airport")]
+               [:service :wikibase/around
+                [[?place ~(wdt :coordinate-location) ?location]
+                 [:bd/serviceParam :wikibase/center ?parisLoc]
+                 [:bd/serviceParam :wikibase/radius "150"]]]]}
      query
      (map :placeLabel)
      (into #{}))
@@ -175,15 +201,14 @@
 (defn releases-since
   "Returns any creative works published since `year`/`month` by any `entities` known to Wikidata."
   [since-year since-month entities]
-  (query
-   (template {:select [?workLabel ?creatorLabel ?role ?date]
-              :where [[?work ?role ?creator]
-                      [?work ~(wdt :publication-date) ?date]
-                      [:union ~@(mapv #(vector ['?work '?role %])
-                                      (keep entity entities))]
-                      [:filter (>= (year ?date) ~since-year)]
-                      [:filter (>= (month ?date) ~since-month)]]
-              :order-by [(asc ?date)]})))
+  (query `{:select [?workLabel ?creatorLabel ?role ?date]
+           :where [[?work ?role ?creator]
+                   [?work ~(wdt :publication-date) ?date]
+                   [:union ~@(mapv #(vector ['?work '?role %])
+                                   (keep entity entities))]
+                   [:filter (>= (year ?date) ~since-year)]
+                   [:filter (>= (month ?date) ~since-month)]]
+           :order-by [(asc ?date)]}))
 
 (->> (releases-since 2019 1 ; year and month
                      ["Kelly Link" "Stromae" "Guillermo del Toro" "Hayao Miyazaki" "Lydia Davis"
@@ -195,12 +220,11 @@
 ;; How about something a bit more serious? Here we find drug-gene
 ;; product interactions and diseases for which these might be
 ;; candidates.
-(->> (query
-      (template {:select [?drugLabel ?geneLabel ?diseaseLabel]
-                 :where [[?drug ~(wdt :physically-interacts-with) ?gene_product]
-                         [?gene_product ~(wdt :encoded-by) ?gene]
-                         [?gene ~(wdt :genetic-association) ?disease]]
-                 :limit 100}))
+(->> (query `{:select [?drugLabel ?geneLabel ?diseaseLabel]
+              :where [[?drug ~(wdt :physically-interacts-with) ?gene_product]
+                      [?gene_product ~(wdt :encoded-by) ?gene]
+                      [?gene ~(wdt :genetic-association) ?disease]]
+              :limit 100})
      (group-by :diseaseLabel)
      (mapv (fn [[k vs]] [k (mapv #(dissoc % :diseaseLabel) vs)]))
      (into {}))
@@ -233,7 +257,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Recently added lexical queries
 
-;; Ancestors to the English word Quark, as in the food
+;; Ancestors to the English word Quark (the food). Notice that we can
+;; also just use namespaced keywords for IDs when translating a query
+;; from a WikiData example.
 (query '{:select-distinct [?ancestorLemma ?ancestorLangLabel]
          :where [{?lexeme {:wikibase/lemma #{{:de "Quark"}}
                            (+ :wdt/P5191) #{?ancestor}}}
@@ -261,11 +287,9 @@
 ;; German-language media representation in Wikidata
 (mapv
  (fn [zeitung]
-   (assoc (first (query
-                  (template
-                   {:select [[(count ?ref) ?mentions]]
-                    :where [[?statement :prov/wasDerivedFrom ?ref]
-                            [?ref :pr/P248 ~(entity zeitung)]]})))
+   (assoc (first (query `{:select [[(count ?ref) ?mentions]]
+                          :where [[?statement :prov/wasDerivedFrom ?ref]
+                                  [?ref :pr/P248 ~(entity zeitung)]]}))
           :zeitung zeitung))
  ["Bild" "Süddeutsche Zeitung" "Frankfurter Allgemeine Zeitung" "Die Zeit" "Die Welt" "Die Tageszeitung"])
 ;;=>
@@ -285,18 +309,18 @@
 ;;
 ;; https://www.wikipathways.org/index.php/Pathway:WP716
 
-(->> (template {:prefixes {:dc "<http://purl.org/dc/elements/1.1/>"
-                           :wp "<http://vocabularies.wikipathways.org/wp#>"}
-                :select-distinct [?interaction_type]
-                :where [[:values {?wpid ["WP716"]}]
-                        [?item :wdt/P2410 ?wpid]
-                        [?item :wdt/P2888 ?source_pathway]
-                        [:service "<http://sparql.wikipathways.org/sparql>"
-                         [[?wp_pathway :dc/identifier ?source_pathway]
-                          {?s {:dct/isPartOf #{?wp_pathway ?interaction}}}
-                          [?interaction :rdf/type :wp/Interaction]
-                          [?interaction :rdf/type ?interaction_type]]]]
-                :limit 20})
+(->> `{:prefixes {:dc "<http://purl.org/dc/elements/1.1/>"
+                  :wp "<http://vocabularies.wikipathways.org/wp#>"}
+       :select-distinct [?interaction_type]
+       :where [[:values {?wpid ["WP716"]}]
+               [?item :wdt/P2410 ?wpid]
+               [?item :wdt/P2888 ?source_pathway]
+               [:service "<http://sparql.wikipathways.org/sparql>"
+                [[?wp_pathway :dc/identifier ?source_pathway]
+                 {?s {:dct/isPartOf #{?wp_pathway ?interaction}}}
+                 [?interaction :rdf/type :wp/Interaction]
+                 [?interaction :rdf/type ?interaction_type]]]]
+       :limit 20}
      query
      (map :interaction_type))
 ;;=>
@@ -309,18 +333,18 @@
    "http://vocabularies.wikipathways.org/wp#Conversion")
 
 ;; All known metabolites involved in Melatonin metabolism.
-(->> (template {:prefixes {:dc "<http://purl.org/dc/elements/1.1/>"
-                           :wp "<http://vocabularies.wikipathways.org/wp#>"}
-                :select [?metaboliteName]
-                :where [[:values {?item [~(entity "Melatonin metabolism and effects")]}]
-                        [?item ~(wdt :WikiPathways-ID) ?wpid]
-                        [?item ~(wdt :exact-match) ?source_pathway]
-                        [:service "<http://sparql.wikipathways.org/sparql>"
-                         [[?wp_pathway :dc/identifier ?source_pathway]
-                          {?metabolite {a             #{:wp/Metabolite} 
-                                        :dct/isPartOf #{?wp_pathway}
-                                        :rdfs/label    #{?metaboliteName}}}]]]
-                :limit 20})
+(->> `{:prefixes {:dc "<http://purl.org/dc/elements/1.1/>"
+                  :wp "<http://vocabularies.wikipathways.org/wp#>"}
+       :select [?metaboliteName]
+       :where [[:values {?item [~(entity "Melatonin metabolism and effects")]}]
+               [?item ~(wdt :WikiPathways-ID) ?wpid]
+               [?item ~(wdt :exact-match) ?source_pathway]
+               [:service "<http://sparql.wikipathways.org/sparql>"
+                [[?wp_pathway :dc/identifier ?source_pathway]
+                 {?metabolite {a             #{:wp/Metabolite} 
+                               :dct/isPartOf #{?wp_pathway}
+                               :rdfs/label    #{?metaboliteName}}}]]]
+       :limit 20}
      query
      (map :metaboliteName))
 #_("Cyclic AMP"
@@ -345,14 +369,13 @@
    "Noradrenaline")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; multiple language support (work ongoing) XXX
+;; multiple language support
 
-;; lookup an entity using Thai as the default language
-;; (binding [mundaneum.query/*default-language* "th"]
-;;  (entity "ระยอง"))
-;; => "Q395325"
+;; lookup an entity using Thai as the default language, then get the
+;; English label for it.
+(let [thai-name "กรุงเทพมหานคร"
+      id (binding [*default-language* :th]
+           (entity thai-name))]
+  (str thai-name " is called " (label id) " in English."))
+;;=> "กรุงเทพมหานคร is called Bangkok in English."
 
-;; also works for describe
-;; (binding [mundaneum.query/*default-language* "th"]
-;;   (describe (entity "ระยอง")))
-;;=> "หน้าแก้ความกำกวมวิกิมีเดีย"

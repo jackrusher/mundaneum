@@ -89,9 +89,9 @@ helper functions, this looks like:
 
 ``` clojure
 ;; what are some works authored by James Joyce?
-(query (template {:select [?work ?workLabel]
-                  :where  [[?work ~(wdt :author) ~(entity "James Joyce")]]
-                  :limit 10})
+(query `{:select [?work ?workLabel]
+         :where  [[?work ~(wdt :author) ~(entity "James Joyce")]]
+         :limit 10}
 ;; [{:work "Q864141", :workLabel "Eveline"}
 ;;  {:work "Q861185", :workLabel "A Little Cloud"}
 ;;  {:work "Q459592", :workLabel "Dubliners"}
@@ -113,8 +113,33 @@ This code is much easier to understand if you have some familiarity
 with SPARQL and how it can be used to query Wikidata. I strongly
 recommend [this
 introduction](https://m.wikidata.org/wiki/Wikidata:SPARQL_query_service/queries)
-to get started. I'm trying to make sure all the examples are easy to
+to get started. I've tried to make sure all the examples are easy to
 translate to the DSL used here.
+
+## Multilingual support
+
+The dynamic variable `mundaneum.query/*default-language*` is an `atom`
+containing an ISO language code keyword like `:en` that controls which
+language will be used by default for labels and description
+input/output. If you are planning to enjoy an interactive session in
+French you could set the default like this:
+
+``` clojure
+(reset! *default-language* :fr)
+```
+
+On the other hand, if you want to mix languages freely, you can use a
+local binding like this:
+
+``` clojure
+;; lookup an entity using Thai as the default language, then get the
+;; English label for it.
+(let [thai-name "กรุงเทพมหานคร"
+      id (binding [*default-language* :th]
+           (entity thai-name))]
+  (str thai-name " is called " (label id) " in English."))
+;;=> "กรุงเทพมหานคร is called Bangkok in English."
+```
 
 ## Learn more
 
