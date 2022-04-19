@@ -1,4 +1,4 @@
-(ns com.jackrusher.mundaneum.properties
+(ns applied-science.mundaneum.properties
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.data.json :as json]))
