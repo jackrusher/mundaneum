@@ -2,12 +2,12 @@
  :deps {com.yetanalytics/flint {:mvn/version "0.1.2"
                                 :exclusions [org.clojure/clojure
                                              org.clojure/clojurescript]}
-        hato/hato {:mvn/version "0.8.2"}
-        org.clojure/clojure   {:mvn/version "1.11.1"}
-        org.clojure/data.json {:mvn/version "2.4.0"}
-        tick/tick {:mvn/version "0.5.0-RC5"}}
+        hato/hato              {:mvn/version "0.8.2"}
+        org.clojure/clojure    {:mvn/version "1.11.1"}
+        org.clojure/data.json  {:mvn/version "2.4.0"}
+        tick/tick              {:mvn/version "0.5.0-RC5"}}
  :aliases {:test {:extra-paths ["test"]
                   :extra-deps  {lambdaisland/kaocha {:mvn/version "1.65.1029"}}
                   :main-opts   ["-m" "kaocha.runner"]}
            :release {:extra-deps {applied-science/deps-library {:mvn/version "0.4.0"}}
-                     :main-opts ["-m" "com.jackrusher.mundaneum"]}}}
+                     :main-opts ["-m" "applied-science.deps-library"]}}}
