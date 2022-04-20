@@ -1,6 +1,6 @@
-(ns applied-science.mundaneum.examples
-  (:require [applied-science.mundaneum.query      :refer [describe entity label query *default-language*]]
-            [applied-science.mundaneum.properties :refer [wdt]]))
+(ns mundaneum.examples
+  (:require [mundaneum.query      :refer [describe entity label query *default-language*]]
+            [mundaneum.properties :refer [wdt]]))
 
 ;; To understand what's happening here, it would be a good idea to
 ;; read through this document:

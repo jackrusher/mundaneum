@@ -1,4 +1,4 @@
-(ns applied-science.mundaneum.properties
+(ns mundaneum.properties
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.data.json :as json]))

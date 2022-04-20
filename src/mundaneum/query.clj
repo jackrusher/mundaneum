@@ -1,6 +1,6 @@
-(ns applied-science.mundaneum.query
+(ns mundaneum.query
   (:require [clojure.data.json :as json]
-            [applied-science.mundaneum.properties :refer [wdt]]
+            [mundaneum.properties :refer [wdt]]
             [com.yetanalytics.flint :as f]
             [hato.client :as http]
             [tick.core :as tick]))

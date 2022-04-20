@@ -10,6 +10,16 @@ c. 1910 vision for something like the World Wide Web.
 (There's a mini-doc about him and it
 [here](https://www.youtube.com/watch?v=hSyfZkVgasI).)
 
+## Coordinates
+
+Recent changes to the group-id policy at Clojars have made publishing
+artifacts there less appealing to me, so for the moment this library
+is available to `deps.edn` users at:
+
+``` clojure
+io.github.jackrusher/mundaneum {:git/sha "SHA"}
+```
+
 ## Motivation
 
 Wikidata is amazing! And it provides API access to all the knowledge
