@@ -151,7 +151,7 @@
 (defn wdt->wd [arc]
   (let [prefix (namespace arc)
         id (name arc)]
-    (if (= prefix "wdt")
+    (if (#{"p" "ps" "wdt"} prefix)
       (keyword "wd" id)
       arc)))
 
@@ -159,12 +159,13 @@
   "Memoized implementation of language-aware label lookup."
   (memoize
    (fn [lang id]
-     (->> `{:select [?label]
-            :where  [[~(wdt->wd id) :rdfs/label ?label]
-                     [:filter (= (lang ?label) ~(name lang))]]}
-          query
-          first
-          :label))))
+     (let [rdfs-label (->> `{:select [?label]
+                             :where  [[~(wdt->wd id) :rdfs/label ?label]
+                                      [:filter (= (lang ?label) ~(name lang))]]}
+                           query
+                           first
+                           :label)]
+       (if rdfs-label rdfs-label id)))))
 
 (defn label
   "Returns the label of the entity with `id`. If `lang` is specified it, overrides `*default-language*`."
