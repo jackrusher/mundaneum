@@ -1,6 +1,6 @@
 ^{:nextjournal.clerk/visibility :hide-ns}
 (ns mundaneum.basics
-  (:require [mundaneum.query :refer [describe entity label query *default-language*]]
+  (:require [mundaneum.query :refer [search  entity describe label query *default-language*]]
             [mundaneum.properties :refer [wdt]]
             [nextjournal.clerk :as clerk]
             [nextjournal.clerk.viewer :as v]))
@@ -129,6 +129,13 @@
 
 (describe (entity "U2" (wdt :part-of) (entity "Berlin U-Bahn")))
 
+;; Lastly, to make it easier to find the right entity without doing a
+;; series of probes using the `entity` function, Mundaneum supplies a
+;; `search` function that performs text search for entities:
+
+^{::clerk/viewer clerk/table}
+(search "Paul Otlet")
+
 ;; ## Using multiple properties
 
 ;; Now that we know the shape of queries and how to look up entities
@@ -208,13 +215,17 @@
 
 (entity {:de "Mensch"})
 
-;; The `label` and `describe` functions can also take an extra first
-;; parameter indicating the language to use. This makes it easy to
-;; find out the Catalan label and French description of `:wd/Q5`.
+;; The `label`, `describe` and `search` functions can also take an
+;; extra first parameter indicating which language to use. This makes
+;; it easy to find out the Catalan label and French description of
+;; `:wd/Q5`.
 
 (label :ca :wd/Q5)
 
 (describe :fr :wd/Q5)
+
+^{::clerk/viewer clerk/table}
+(search :it "Dante")
 
 ;; So far, we've been operating with the English language as the
 ;; default. It's also possible to set the language for all operations

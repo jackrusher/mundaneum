@@ -188,6 +188,28 @@
   ([id] (describe* (default-language) id))
   ([lang id] (describe* lang id)))
 
+(defn search
+  ([text]
+   (search (default-language) text))
+  ([lang text]
+   (->> (-> (http/get "https://www.wikidata.org/w/api.php"
+                      {:query-params {:action "wbsearchentities"
+                                      :search text
+                                      :language (name lang)
+                                      :uselang (name lang)
+                                      :type "item"
+                                      :format "json"}})
+            :body
+            (json/read-str :key-fn keyword)
+            :search)
+        (map (fn [{:keys [:description :id :display] :as vs}]
+               {:id (keyword "wd" id)
+                :description description
+                :label (get-in display [:label :value])})))))
+
+(search "Paul Otlet")
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; wdno = no value!
