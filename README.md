@@ -186,10 +186,11 @@ use the previously described API:
 
 ## Learn more
 
-The `mundaneum.examples` namespace is all examples, should you care to
-have a play. In addition to working through those, a good exercise is
-to visit the WikiData SPARQL examples page and translate some
-interesting queries into the DSL.
+Additional documentation can be found in the Clerk notebooks in the
+`notebooks` directory, beginning with `basics.clj`. If you start your
+REPL with the `:dev` alias, you'll already have Clerk loaded. (This
+will happen automatically if you use `cider-jack-in` from Emacs via a
+bit of configuration in this repo's `.dir-locals` file.)
 
 Enjoy!
 
