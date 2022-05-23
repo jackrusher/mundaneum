@@ -1,6 +1,6 @@
 ^{:nextjournal.clerk/visibility :hide-ns}
 (ns mundaneum.basics
-  (:require [mundaneum.query :refer [search  entity describe label query *default-language*]]
+  (:require [mundaneum.query :refer [search entity entity-data clojurized-claims describe label query *default-language*]]
             [mundaneum.properties :refer [wdt]]
             [nextjournal.clerk :as clerk]
             [nextjournal.clerk.viewer :as v]))
@@ -129,12 +129,59 @@
 
 (describe (entity "U2" (wdt :part-of) (entity "Berlin U-Bahn")))
 
-;; Lastly, to make it easier to find the right entity without doing a
-;; series of probes using the `entity` function, Mundaneum supplies a
-;; `search` function that performs text search for entities:
+;; To make it easier to find the right entity without doing a series
+;; of probes using the `entity` function, Mundaneum supplies a
+;; `search` function that performs text search for entities using
+;; their labels and aliases:
 
 ^{::clerk/viewer clerk/table}
-(search "Paul Otlet")
+(search "Alien")
+
+;; And, for completeness, there's a helper function to pull all the
+;; data for a given entity. For example, plugging in the ID from the
+;; film Ridley Scott film Alien we get:
+
+(def alien
+  (entity-data :wd/Q103569))
+
+;; This nested map structure has many keys, the most interesting of
+;; which are `:labels`, `:aliases`, `:descriptions` (all of each for
+;; every language), and `:claims`.
+
+;; The `:claims` key contains a map where the keys are properties and
+;; the values are a list of asserted values for that property, along
+;; with the source of that "claim". This somewhat journalistic
+;; approach allows Wikidata to record multiple competing claims about
+;; the world.
+
+;; Because it's often useful to automatically convert the claims to a
+;; form more like what queries return, there's a helper function for
+;; that:
+
+(def alien-claims
+  (clojurized-claims alien))
+
+;; The keys in the resulting map are human-readable property keywords
+;; suitable to pass to the `wdt` function, while each value is a
+;; vector containing the possible values for that property. Keep in
+;; mind that multiple values might indicate that the cardinality of
+;; the answer is greater than one (a film that won multiple awards,
+;; say), or it could mean that the cardinality is one but the true
+;; value is contested.
+
+;; An an example of the former case, here are all the awards the film
+;; received:
+
+^{::clerk/viewer clerk/table}
+(mapv #(hash-map :award (label %)) (:award-received alien-claims))
+
+;; Note that if you are only trying to find out something like this,
+;; you would probably be better off using a query than pulling all the
+;; facts for the entity:
+
+^{::clerk/viewer clerk/table}
+(query `{:select [?awardLabel]
+         :where [[:wd/Q103569 ~(wdt :award-received) ?award]]})
 
 ;; ## Using multiple properties
 

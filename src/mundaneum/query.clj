@@ -1,6 +1,6 @@
 (ns mundaneum.query
   (:require [clojure.data.json :as json]
-            [mundaneum.properties :refer [wdt]]
+            [mundaneum.properties :refer [wdt wdt->readable]]
             [com.yetanalytics.flint :as f]
             [hato.client :as http]
             [tick.core :as tick]))
@@ -207,8 +207,39 @@
                 :description description
                 :label (get-in display [:label :value])})))))
 
-(search "Paul Otlet")
+;; gets everything for the entity; :claims key has the properties
+(defn entity-data [item]
+  (let [item-id (name item)]
+    ((keyword item-id)
+     (-> (http/get (str "https://www.wikidata.org/wiki/Special:EntityData/" item-id ".json")
+                   {:query-params {:format "json"}})
+         :body
+         (json/read-str :key-fn keyword)
+         :entities))))
 
+(defn clojurize-claim
+  "Convert the values in `result` to Clojure types."
+  [{:keys [datatype datavalue] :as snak}]
+  (condp = datatype
+    "monolingualtext" {(-> datavalue :value :language keyword) (-> datavalue :value :text)} 
+    "wikibase-entityid" (keyword (str "wd/" (-> datavalue :id)))
+    "wikibase-item" (keyword (str "wd/" (-> datavalue :value :id)))
+    "commonsMedia" (-> datavalue :value)
+    "string" (-> datavalue :value)
+    "external-id" (-> datavalue :value)
+    "time" (-> datavalue :value)
+    "url" (-> datavalue :value)
+    "quantity" {:amount (-> datavalue :value :amount)
+                :units (-> datavalue :value :unit)}
+    [datatype datavalue]))
+
+(defn clojurized-claims [e-data]
+  (reduce
+   (fn [m [prop snaks]]
+     (assoc m (wdt->readable (->> prop name (str "wdt/") keyword))
+            (mapv (comp clojurize-claim :mainsnak) snaks)))
+   {}
+   (:claims e-data)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

@@ -17,3 +17,9 @@
                             keyword)
                         (keyword (str "wdt/" id))))
                {})))
+
+;; reverse loookup
+(def wdt->readable
+  (reduce (fn [m [readable wdt]] (assoc m wdt readable))
+          {}
+          wdt))
