@@ -12,9 +12,7 @@
                   :main-opts   ["-m" "kaocha.runner"]}
            :release {:extra-deps {applied-science/deps-library {:mvn/version "0.4.0"}}
                      :main-opts ["-m" "applied-science.deps-library"]}
-           :nextjournal/clerk {:exec-fn nextjournal.clerk/build-static-app!
-                               :exec-args {:paths ["notebooks/basics.clj"]}}}}
-
-;;:extra-deps {io.github.nextjournal/clerk {:mvn/version "0.11.603"}}
+           :nextjournal/clerk {:exec-fn nextjournal.clerk/build!
+                               :exec-args {:index "notebooks/basics.clj"}}}}
 
                                
