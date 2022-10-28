@@ -6,9 +6,12 @@
         org.clojure/clojure    {:mvn/version "1.11.1"}
         org.clojure/data.json  {:mvn/version "2.4.0"}
         tick/tick              {:mvn/version "0.5.0-RC5"}}
- :aliases {:dev {:extra-deps {io.github.nextjournal/clerk {:mvn/version "0.7.418"}}}
+ :aliases {:dev {:extra-deps {io.github.nextjournal/clerk {:mvn/version "0.11.603"}}}
            :test {:extra-paths ["test"]
                   :extra-deps  {lambdaisland/kaocha {:mvn/version "1.65.1029"}}
                   :main-opts   ["-m" "kaocha.runner"]}
            :release {:extra-deps {applied-science/deps-library {:mvn/version "0.4.0"}}
-                     :main-opts ["-m" "applied-science.deps-library"]}}}
+                     :main-opts ["-m" "applied-science.deps-library"]}
+           :nextjournal/clerk {:extra-deps {io.github.nextjournal/clerk {:mvn/version "0.11.603"}}
+                               :exec-fn nextjournal.clerk/build-static-app!
+                               :exec-args {:paths ["notebooks/basics.clj"]}}}}
