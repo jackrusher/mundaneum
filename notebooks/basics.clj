@@ -1,12 +1,11 @@
 ^{:nextjournal.clerk/visibility :hide-ns}
 (ns mundaneum.basics
-  (:require [mundaneum.query :refer [search entity entity-data clojurized-claims describe label query *default-language*]]
+  (:require [mundaneum.query :refer [search entity entity-data clojurize-claims describe label query *default-language*]]
             [mundaneum.properties :refer [wdt]]
             [nextjournal.clerk :as clerk]
             [nextjournal.clerk.viewer :as v]))
 
-^{::clerk/visibility :hide
-  ::clerk/viewer clerk/hide-result}
+^{::clerk/visibility {:code :hide :result :hide}}
 (comment
   
   ;; This is how we start Clerk and tell it to serve this notebook at
@@ -123,11 +122,11 @@
 ;; "U2" that's `:part-of` the "Berlin U-Bahn" (an underground public
 ;; transit system):
 
-(entity "U2" (wdt :part-of) (entity "Berlin U-Bahn"))
+(entity "U2" (wdt :transport-network) (entity "Berlin U-Bahn"))
 
 ;; And, once more, we can check to make sure it's right one:
 
-(describe (entity "U2" (wdt :part-of) (entity "Berlin U-Bahn")))
+(describe (entity "U2" (wdt :transport-network) (entity "Berlin U-Bahn")))
 
 ;; To make it easier to find the right entity without doing a series
 ;; of probes using the `entity` function, Mundaneum supplies a
@@ -159,7 +158,7 @@
 ;; that:
 
 (def alien-claims
-  (clojurized-claims alien))
+  (clojurize-claims alien))
 
 ;; The keys in the resulting map are human-readable property keywords
 ;; suitable to pass to the `wdt` function, while each value is a

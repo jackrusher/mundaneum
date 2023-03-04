@@ -233,7 +233,7 @@
                 :units (-> datavalue :value :unit)}
     [datatype datavalue]))
 
-(defn clojurized-claims [e-data]
+(defn clojurize-claims [e-data]
   (reduce
    (fn [m [prop snaks]]
      (assoc m (wdt->readable (->> prop name (str "wdt/") keyword))
