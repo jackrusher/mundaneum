@@ -11,10 +11,10 @@
   (testing "Entity lookup/description"
     (is (= (entity "U2") :wd/Q396))
     (is (= (entity "Berlin U-Bahn") :wd/Q68646))
-    (is (= (entity "U2" (wdt :part-of) (entity "Berlin U-Bahn")) :wd/Q99697))
+    (is (= (entity "U2" (wdt :transport-network) (entity "Berlin U-Bahn")) :wd/Q99697))
     (is (= (label :wd/Q396) "U2"))
     (is (= (describe (entity "U2")) "Irish rock band"))
-    (is (= (describe (entity "U2" (wdt :part-of) (entity "Berlin U-Bahn")))
+    (is (= (describe (entity "U2" (wdt :transport-network) (entity "Berlin U-Bahn")))
            "underground line in Berlin")))
 
   (testing "Multilingual support with binding"
@@ -50,7 +50,7 @@
     (is (= (->> `{:select [?stationLabel]
                   :where [[?station
                            ~(wdt :connecting-line)
-                           ~(entity "U1" (wdt :part-of) (entity "Berlin U-Bahn"))]]}
+                           ~(entity "U1" (wdt :transport-network) (entity "Berlin U-Bahn"))]]}
                 query
                 (map :stationLabel)
                 (into #{}))
