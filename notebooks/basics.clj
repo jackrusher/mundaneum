@@ -285,7 +285,7 @@
 (binding [*default-language* :ga]
   (query `{:select [?areaLabel]
            :where [[~(entity "Éire")
-                    ~(wdt :contains-administrative-territorial-entity)
+                    ~(wdt :contains-the-administrative-territorial-entity)
                     ?area]]
            :limit 50}))
 
