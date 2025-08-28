@@ -16,6 +16,8 @@
     (deref *default-language*)
     *default-language*))
 
+(def ^:dynamic *default-user-agent* "Mundaneum (+https://github.com/jackrusher/mundaneum)")
+
 (def prefixes
   "RDF prefixes automatically supported by the WikiData query service."
   {:bd "<http://www.bigdata.com/rdf#>"
@@ -90,7 +92,8 @@
   [sparql-text]
   (mapv clojurize-values
         (-> (http/get "https://query.wikidata.org/sparql"
-                      {:query-params {:query sparql-text
+                      {:headers {"User-Agent" *default-user-agent*}
+                       :query-params {:query sparql-text
                                       :format "json"}})
             :body
             (json/read-str :key-fn keyword)
@@ -193,7 +196,8 @@
    (search (default-language) text))
   ([lang text]
    (->> (-> (http/get "https://www.wikidata.org/w/api.php"
-                      {:query-params {:action "wbsearchentities"
+                      {:headers {"User-Agent" *default-user-agent*}
+                       :query-params {:action "wbsearchentities"
                                       :search text
                                       :language (name lang)
                                       :uselang (name lang)
@@ -212,7 +216,8 @@
   (let [item-id (name item)]
     ((keyword item-id)
      (-> (http/get (str "https://www.wikidata.org/wiki/Special:EntityData/" item-id ".json")
-                   {:query-params {:format "json"}})
+                   {:headers {"User-Agent" *default-user-agent*}
+                    :query-params {:format "json"}})
          :body
          (json/read-str :key-fn keyword)
          :entities))))
