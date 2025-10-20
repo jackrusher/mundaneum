@@ -105,6 +105,8 @@
 (query `{:select *
          :where [[~(entity "Mundaneum") ~(wdt :native-label) ?o]]})
 
+;; multi-paradigm programming language
+
 ;; One thing to keep in mind with the `entity` function is that
 ;; sometimes the default result isn't the one we want.
 
@@ -293,33 +295,6 @@
 ;; `*default-language*` atom to a keyword representing an ISO language
 ;; code. For example, to specify French as the default language one
 ;; would: `(reset! *default-language* :fr)`.
-
-;; ## Federated Queries
-
-;; One of the most powerful features of SPARQL is the ability to make
-;; Federated Queries. When we send a query that contains a `:service`
-;; section, it tells the server that it should forward that part of
-;; the query to _another_ server and return the combined the results.
-
-;; This query asks Wikidata for the `:WikiPathways-ID` for Melatonin
-;; metabolism, but also tells the Wikidata server to ask the endpoint
-;; at `<http://sparql.wikipathways.org/sparql>` (a separate database
-;; of biological pathways) to find all the metabolites that are part
-;; of that pathway.
-
-^{::clerk/viewer clerk/table}
-(query `{:prefixes {:dc "<http://purl.org/dc/elements/1.1/>"
-                    :wp "<http://vocabularies.wikipathways.org/wp#>"}
-         :select [?metaboliteName]
-         :where [[:values {?item [~(entity "Melatonin metabolism and effects")]}]
-                 [?item ~(wdt :WikiPathways-ID) ?wpid]
-                 [?item ~(wdt :exact-match) ?source_pathway]
-                 [:service "<http://sparql.wikipathways.org/sparql>"
-                  [[?wp_pathway :dc/identifier ?source_pathway]
-                   {?metabolite {a             #{:wp/Metabolite} 
-                                 :dct/isPartOf #{?wp_pathway}
-                                 :rdfs/label    #{?metaboliteName}}}]]]
-         :limit 20})
 
 ;; This concludes our tour of the basic features of Mundaneum. The
 ;; following sections will feature some more advanced use cases. 😊

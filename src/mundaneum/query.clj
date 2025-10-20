@@ -80,7 +80,7 @@
                                  (:value v))
                        "literal" (condp = datatype
                                    "http://www.w3.org/2001/XMLSchema#decimal" (Float/parseFloat value)
-                                   "http://www.w3.org/2001/XMLSchema#integer" (Integer/parseInt value)
+                                   "http://www.w3.org/2001/XMLSchema#integer" (Long/parseLong value)
                                    "http://www.w3.org/2001/XMLSchema#dateTime" (tick/instant value)
                                    nil value ; no datatype, return literal as is
                                    v) ; unknown datatype, return whole value map
