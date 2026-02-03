@@ -101,7 +101,7 @@ helper functions, this looks like:
 ;; what are some works authored by James Joyce?
 (query `{:select [?work ?workLabel]
          :where  [[?work ~(wdt :author) ~(entity "James Joyce")]]
-         :limit 10}
+         :limit 10})
 ;; [{:work "Q864141", :workLabel "Eveline"}
 ;;  {:work "Q861185", :workLabel "A Little Cloud"}
 ;;  {:work "Q459592", :workLabel "Dubliners"}
